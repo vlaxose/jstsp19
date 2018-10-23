@@ -70,7 +70,7 @@ function [converged, rate, ee, Lt_opt, S_proposed, kappa, S_bf, rate_approximati
           end
       end
     end
-    
+   
     % Proposed
     ee_bit_bf=0;
     for bit=1:max_bit
