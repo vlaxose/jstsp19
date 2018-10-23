@@ -11,7 +11,7 @@ L = 2;
 snr_range = 30;
 subSamplingRatio_range = [0.2 0.4 0.8];
 Imax = 120;
-maxRealizations = 1;
+maxRealizations = 10;
 T = 100;
 
 error_mcsi = zeros(maxRealizations,1);
@@ -30,7 +30,7 @@ for snr_indx = 1:length(snr_range)
   
   for sub_indx=1:length(subSamplingRatio_range)
 
-   for r=1:maxRealizations
+   parfor r=1:maxRealizations
    disp(['realization: ', num2str(r)]);
 
     [H,Ar,At] = wideband_mmwave_channel(L, Nr, Nt, total_num_of_clusters, total_num_of_rays);
@@ -75,7 +75,9 @@ for snr_indx = 1:length(snr_range)
     s_twostage = vamp(y, Phi, snr, 200*L);
     S_twostage = reshape(s_twostage, Gr, Gt);
     error_twostage(r) = norm(S_twostage-Zbar)^2/norm(Zbar)^2
-     
+    if(error_twostage(r)>1)
+        error_twostage(r) = 1;
+    end
     % ADMM matrix completion with side-information
     disp('Running ADMM-based MCSI...');
     rho = 0.001;
