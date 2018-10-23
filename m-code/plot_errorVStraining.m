@@ -11,7 +11,7 @@ L = 2;
 snr_range = 30;
 subSamplingRatio_range = [0.2 0.4 0.8];
 Imax = 120;
-maxRealizations = 10;
+maxRealizations = 1;
 T = 100;
 
 error_mcsi = zeros(maxRealizations,1);
@@ -68,18 +68,14 @@ for snr_indx = 1:length(snr_range)
     if(error_omp(r)>1)
         error_omp(r)=1;
     end
-% 
-% 
     
-%     
-% 
-%     % Two-stage scheme matrix completion and sparse recovery
-%     disp('Running Two-stage-based Technique..');
-%     X_twostage_1 = mc_svt(H, OH, Omega, Imax);
-%     s_twostage = vamp(vec(X_twostage_1), kron(conj(Dt), Dr), 0.001, 2*L);
-%     X_twostage = Dr*reshape(s_twostage, Nr, Nt)*Dt';
-%     error_twostage(r) = norm(H-X_twostage)^2/norm(H)^2;
-%     
+    % Two-stage scheme matrix completion and sparse recovery
+    disp('Running Two-stage-based Technique..');
+    X_twostage_1 = mc_svt(Y, OY, Omega, Imax, 0.001);
+    s_twostage = vamp(y, Phi, snr, 200*L);
+    S_twostage = reshape(s_twostage, Gr, Gt);
+    error_twostage(r) = norm(S_twostage-Zbar)^2/norm(Zbar)^2
+     
     % ADMM matrix completion with side-information
     disp('Running ADMM-based MCSI...');
     rho = 0.001;
@@ -105,12 +101,12 @@ p11 = semilogy(subSamplingRatio_range, (mean_error_omp(:, 1)));hold on;
 set(p11,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', '>', 'MarkerSize', 8, 'Color', 'Black');
 p12 = semilogy(subSamplingRatio_range, (mean_error_vamp(:, 1)));hold on;
 set(p12,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Blue', 'MarkerFaceColor', 'Blue', 'Marker', 'o', 'MarkerSize', 8, 'Color', 'Blue');
-% p13 = semilogy(snr_range, (mean_error_twostage(1, :)));hold on;
-% set(p13,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Cyan', 'MarkerFaceColor', 'Cyan', 'Marker', 's', 'MarkerSize', 8, 'Color', 'Cyan');
+p13 = semilogy(subSamplingRatio_range, (mean_error_twostage(:, 1)));hold on;
+set(p13,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Cyan', 'MarkerFaceColor', 'Cyan', 'Marker', 's', 'MarkerSize', 8, 'Color', 'Cyan');
 p14 = semilogy(subSamplingRatio_range, (mean_error_mcsi(:, 1)));hold on;
 set(p14,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Green', 'MarkerFaceColor', 'Green', 'Marker', 'h', 'MarkerSize', 8, 'Color', 'Green');
  
-legend({'OMP [4]', 'VAMP [12]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
+legend({'OMP [4]', 'TSSR [9]', 'VAMP [12]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
  
 xlabel('sub-sampling ratio');
 ylabel('NMSE (dB)')
