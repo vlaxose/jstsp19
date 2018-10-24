@@ -60,7 +60,6 @@ for snr_indx = 1:length(snr_range)
     if(error_vamp(r)>1)
         error_vamp(r) = 1;
     end
-       
     
     % Sparse channel estimation
     disp('Running OMP...');

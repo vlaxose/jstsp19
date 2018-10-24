@@ -2,16 +2,16 @@ clear;
 clc;
 
 %%% Initialization
-Nt = 16;
-Nr = 16;
+Nt = 32;
+Nr = 8;
 total_num_of_clusters = 2;
 total_num_of_rays = 3;
 Np = total_num_of_clusters*total_num_of_rays;
 L = 2;
 snr_range = [-10 -5 0 5 10];
-subSamplingRatio_range = 0.7;
-Imax = 120;
-maxRealizations = 15;
+subSamplingRatio_range = 0.5;
+Imax = 100;
+maxRealizations = 1;
 
 error_mcsi = zeros(maxRealizations,1);
 error_omp = zeros(maxRealizations,1);
@@ -38,43 +38,48 @@ for snr_indx = 1:length(snr_range)
     Dr = 1/sqrt(Nr)*exp(-1j*(0:Nr-1)'*2*pi*(0:Gr-1)/Gr);
     Dt = 1/sqrt(Nt)*exp(-1j*(0:Nt-1)'*2*pi*(0:Gt-1)/Gt);
     [Y, Abar, Zbar, W] = wideband_hybBF_comm_system_training(H, Dr, Dt, T, snr);
-     = size(W'*Dr, 2);
+    Mr = size(W'*Dr, 2);
     Mt = size(Abar, 1);
     % Random sub-sampling
     indices = randperm(Nr*T);
     sT = round(subSamplingRatio_range*Nr*T);
     indices_sub = indices(1:sT);
-  	Omega = zeros(Nr, T);
+   	Omega = zeros(Nr, T);
     Omega(indices_sub) = ones(sT, 1);
     OY = Omega.*Y;
     sT2 = round(subSamplingRatio_range*T);
     Phi = kron(Abar(:, 1:sT2).', W'*Dr);
     y = vec(Y(:,1:sT2));
 
-    % VAMP sparse recovery
+     % VAMP sparse recovery
     disp('Running VAMP...');
     s_vamp = vamp(y, Phi, snr, 100*L);
     S_vamp = reshape(s_vamp, Mr, Mt);
     error_vamp(r) = norm(S_vamp-Zbar)^2/norm(Zbar)^2
-
+    if(error_vamp(r)>1)
+        error_vamp(r) = 1;
+    end
+    
     % Sparse channel estimation
     disp('Running OMP...');
     s_omp = OMP(Phi, y, 100*L);
     S_omp = reshape(s_omp, Mr, Mt);
-    error_omp(r) = norm(S_omp-Zbar)^2/norm(Zbar)^2
-%
-%
-
-%
-%
-%     % Two-stage scheme matrix completion and sparse recovery
-%     disp('Running Two-stage-based Technique..');
-%     X_twostage_1 = mc_svt(H, OH, Omega, Imax);
-%     s_twostage = vamp(vec(X_twostage_1), kron(conj(Dt), Dr), 0.001, 2*L);
-%     X_twostage = Dr*reshape(s_twostage, Nr, Nt)*Dt';
-%     error_twostage(r) = norm(H-X_twostage)^2/norm(H)^2;
-%
-    % ADMM matrix completion with side-information
+    error_omp(r) = norm(S_omp-Zbar)^2/norm(Zbar)^2      
+    if(error_omp(r)>1)
+        error_omp(r)=1;
+    end
+    
+    % Two-stage scheme matrix completion and sparse recovery
+    disp('Running Two-stage-based Technique..');
+    X_twostage_1 = mc_svt(Y, OY, Omega, Imax, 0.001);
+    s_twostage = vamp(y, Phi, snr, 200*L);
+    S_twostage = reshape(s_twostage, Mr, Mt);
+    error_twostage(r) = norm(S_twostage-Zbar)^2/norm(Zbar)^2
+    if(error_twostage(r)>1)
+        error_twostage(r) = 1;
+    end
+    
+    % Proposed
     disp('Running ADMM-based MCSI...');
     rho = 0.001;
     tau_S = 1/norm(OY, 'fro')^2;
