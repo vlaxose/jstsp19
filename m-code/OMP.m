@@ -8,17 +8,22 @@ function [ x_hat, indexSet, v, targetMatrix ] = OMP( A, v, m )
 d = length(v);
 [measures, size_d]=size(A);
 r = v;
+a = r;
 targetMatrix=[];
 indexSet = cell(1,m);
-for t=1:m
+error = norm(r)/norm(a);
+t = 1;
+while( error>0.1 || t<=m)
     [maxInnerProduct, indexSet{t}] = max(abs(A'*r));
     targetMatrix = [ targetMatrix, A(:,indexSet{t})];
     x = targetMatrix\v;
     a = targetMatrix*x;
     r = v - a;
+    error = norm(r)/norm(a);
+    t = t + 1;
 end
 
-% return the estimation vecotr
+% return the estimation vector
 x_hat = zeros(size_d,1);
 i=1;
 for t=1:length(indexSet)

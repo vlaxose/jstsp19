@@ -25,7 +25,7 @@ mean_error_twostage =  zeros(length(subSamplingRatio_range), length(snr_range));
 
 for snr_indx = 1:length(snr_range)
   snr = 10^(-snr_range(snr_indx)/10);
-  
+
   for sub_indx=1:length(subSamplingRatio_range)
     T = round(subSamplingRatio_range(sub_indx)*Nt*Nr);
 
@@ -33,11 +33,13 @@ for snr_indx = 1:length(snr_range)
    disp(['realization: ', num2str(r)]);
 
     [H,Ar,At] = wideband_mmwave_channel(L, Nr, Nt, total_num_of_clusters, total_num_of_rays);
-    Dr = 1/sqrt(Nr)*exp(-1j*(0:Nr-1)'*2*pi*(0:Nr-1)/Nr);
-    Dt = 1/sqrt(Nt)*exp(-1j*(0:Nt-1)'*2*pi*(0:Nt-1)/Nt);
+    Gr = Nr;
+    Gt = Nt;
+    Dr = 1/sqrt(Nr)*exp(-1j*(0:Nr-1)'*2*pi*(0:Gr-1)/Gr);
+    Dt = 1/sqrt(Nt)*exp(-1j*(0:Nt-1)'*2*pi*(0:Gt-1)/Gt);
     [Y, Abar, Zbar, W] = wideband_hybBF_comm_system_training(H, Dr, Dt, T, snr);
-    Gr = size(W'*Dr, 2);
-    Gt = size(Abar, 1);
+     = size(W'*Dr, 2);
+    Mt = size(Abar, 1);
     % Random sub-sampling
     indices = randperm(Nr*T);
     sT = round(subSamplingRatio_range*Nr*T);
@@ -48,30 +50,30 @@ for snr_indx = 1:length(snr_range)
     sT2 = round(subSamplingRatio_range*T);
     Phi = kron(Abar(:, 1:sT2).', W'*Dr);
     y = vec(Y(:,1:sT2));
-    
+
     % VAMP sparse recovery
     disp('Running VAMP...');
     s_vamp = vamp(y, Phi, snr, 100*L);
-    S_vamp = reshape(s_vamp, Gr, Gt);
+    S_vamp = reshape(s_vamp, Mr, Mt);
     error_vamp(r) = norm(S_vamp-Zbar)^2/norm(Zbar)^2
-    
+
     % Sparse channel estimation
     disp('Running OMP...');
     s_omp = OMP(Phi, y, 100*L);
-    S_omp = reshape(s_omp, Gr, Gt);
-    error_omp(r) = norm(S_omp-Zbar)^2/norm(Zbar)^2   
-% 
-% 
-    
-%     
-% 
+    S_omp = reshape(s_omp, Mr, Mt);
+    error_omp(r) = norm(S_omp-Zbar)^2/norm(Zbar)^2
+%
+%
+
+%
+%
 %     % Two-stage scheme matrix completion and sparse recovery
 %     disp('Running Two-stage-based Technique..');
 %     X_twostage_1 = mc_svt(H, OH, Omega, Imax);
 %     s_twostage = vamp(vec(X_twostage_1), kron(conj(Dt), Dr), 0.001, 2*L);
 %     X_twostage = Dr*reshape(s_twostage, Nr, Nt)*Dt';
 %     error_twostage(r) = norm(H-X_twostage)^2/norm(H)^2;
-%     
+%
     % ADMM matrix completion with side-information
     disp('Running ADMM-based MCSI...');
     rho = 0.001;
@@ -101,9 +103,9 @@ set(p12,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Blue', 'MarkerFaceC
 % set(p13,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Cyan', 'MarkerFaceColor', 'Cyan', 'Marker', 's', 'MarkerSize', 8, 'Color', 'Cyan');
 p14 = semilogy(snr_range, (mean_error_mcsi(1, :)));hold on;
 set(p14,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Green', 'MarkerFaceColor', 'Green', 'Marker', 'h', 'MarkerSize', 8, 'Color', 'Green');
- 
+
 legend({'OMP [4]', 'VAMP [12]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
- 
+
 xlabel('SNR (dB)');
 ylabel('NMSE (dB)')
 grid on;set(gca,'FontSize',12);
