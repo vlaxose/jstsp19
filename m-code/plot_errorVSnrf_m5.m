@@ -9,30 +9,29 @@ total_num_of_clusters = 2;
 total_num_of_rays = 3;
 Np = total_num_of_clusters*total_num_of_rays;
 L = 2;
-snr_range = 5;
-subSamplingRatio = 0.5;
+snr_range = -5;
+subSamplingRatio_range = [0.1 0.2 0.5 0.8];
 Imax = 120;
-maxRealizations = 1;
-T_range = [60 80 100 120];
+maxRealizations = 10;
+T = 100;
 
 error_mcsi = zeros(maxRealizations,1);
 error_omp = zeros(maxRealizations,1);
 error_vamp = zeros(maxRealizations,1);
 error_twostage = zeros(maxRealizations,1);
 
-mean_error_mcsi = zeros(length(T_range), length(snr_range));
-mean_error_omp =  zeros(length(T_range), length(snr_range));
-mean_error_vamp =  zeros(length(T_range), length(snr_range));
-mean_error_twostage =  zeros(length(T_range), length(snr_range));
+mean_error_mcsi = zeros(length(subSamplingRatio_range), length(snr_range));
+mean_error_omp =  zeros(length(subSamplingRatio_range), length(snr_range));
+mean_error_vamp =  zeros(length(subSamplingRatio_range), length(snr_range));
+mean_error_twostage =  zeros(length(subSamplingRatio_range), length(snr_range));
 
 for snr_indx = 1:length(snr_range)
   snr = 10^(-snr_range(snr_indx)/10);
   snr_db = snr_range(snr_indx);
   
-  for t_indx=1:length(T_range)
-   T = T_range(t_indx);
+  for sub_indx=1:length(subSamplingRatio_range)
 
-   for r=1:maxRealizations
+   parfor r=1:maxRealizations
    disp(['realization: ', num2str(r)]);
 
     [H,Ar,At] = wideband_mmwave_channel(L, Nr, Nt, total_num_of_clusters, total_num_of_rays);
@@ -45,12 +44,12 @@ for snr_indx = 1:length(snr_range)
     Mt = size(Abar, 1);
     % Random sub-sampling
     indices = randperm(Nr*T);
-    sT = round(subSamplingRatio*Nr*T);
+    sT = round(subSamplingRatio_range(sub_indx)*Nr*T);
     indices_sub = indices(1:sT);
   	Omega = zeros(Nr, T);
     Omega(indices_sub) = ones(sT, 1);
     OY = Omega.*Y;
-    sT2 = round(subSamplingRatio*T);
+    sT2 = round(subSamplingRatio_range(sub_indx)*T);
     Phi = kron(Abar(:, 1:sT2).', W'*Dr);
     y = vec(Y(:,1:sT2));
     
@@ -104,20 +103,21 @@ end
 
 
 figure;
-p11 = semilogy(T_range, (mean_error_omp(:, 1)));hold on;
+range = round(subSamplingRatio_range*Nr);
+p11 = semilogy(range, (mean_error_omp(:, 1)));hold on;
 set(p11,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', '>', 'MarkerSize', 8, 'Color', 'Black');
-p12 = semilogy(T_range, (mean_error_vamp(:, 1)));hold on;
+p12 = semilogy(range, (mean_error_vamp(:, 1)));hold on;
 set(p12,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Blue', 'MarkerFaceColor', 'Blue', 'Marker', 'o', 'MarkerSize', 8, 'Color', 'Blue');
-p13 = semilogy(T_range, (mean_error_twostage(:, 1)));hold on;
+p13 = semilogy(range, (mean_error_twostage(:, 1)));hold on;
 set(p13,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Cyan', 'MarkerFaceColor', 'Cyan', 'Marker', 's', 'MarkerSize', 8, 'Color', 'Cyan');
-p14 = semilogy(T_range, (mean_error_mcsi(:, 1)));hold on;
+p14 = semilogy(range, (mean_error_mcsi(:, 1)));hold on;
 set(p14,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Green', 'MarkerFaceColor', 'Green', 'Marker', 'h', 'MarkerSize', 8, 'Color', 'Green');
  
 legend({'OMP [11]', 'VAMP [21]', 'TSSR [15]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
-
-xlabel('sub-sampling ratio');
+ 
+xlabel('L_R');
 ylabel('NMSE (dB)')
 grid on;set(gca,'FontSize',12);
  
-savefig('results/errorVStraining.fig')
-save('results/errorVStraining.mat')
+savefig('results/errorVSnrf_m5db.fig')
+save('results/errorVSnrf_m5db.mat')
