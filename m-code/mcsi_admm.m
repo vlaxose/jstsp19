@@ -55,8 +55,8 @@ function [S, Y, convergence_error] = mcsi_admm(subY, Omega, A, B, Imax, tau, tau
     V1 = V1 + rho*(Y-X);
     V2 = V2 + rho*(C - X + Xs);
 
-     S_mcsi = pinv(A)*Y*pinv(B);
-     norm(S_mcsi-Zbar)^2/norm(Zbar)^2
+%     S_mcsi = pinv(A)*Y*pinv(B);
+%     norm(S_mcsi-Zbar)^2/norm(Zbar)^2
   end
 
 

@@ -10,7 +10,7 @@ function [mean_rate, mean_ee, mean_Lt_opt, mean_kappa] = monte_carlo_sims(transm
   mean_Lt_opt = zeros(1, K);
   mean_kappa = zeros(1, maxDBiters+1);
   
-  for r=1:total_monte_carlo_realizations
+  parfor r=1:total_monte_carlo_realizations
 
     [converged, rate, ee, Lt_opt, ~, kappa] = systemModel(Nt, Nr, Lt, Ns, total_num_of_clusters, total_num_of_rays, transmit_snr, maxDBiters, 0);
 
