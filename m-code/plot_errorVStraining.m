@@ -12,7 +12,7 @@ L = 2;
 snr_range = 5;
 subSamplingRatio = 0.5;
 Imax = 120;
-maxRealizations = 20;
+maxRealizations = 50;
 T_range = [60 80 100 120];
 
 error_mcsi = zeros(maxRealizations,1);
