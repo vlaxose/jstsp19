@@ -12,7 +12,7 @@ L = 2;
 snr_range = 5;
 subSamplingRatio = 0.5;
 Imax = 120;
-maxRealizations = 1;
+maxRealizations = 20;
 T_range = [60 80 100 120];
 
 error_mcsi = zeros(maxRealizations,1);
@@ -32,7 +32,7 @@ for snr_indx = 1:length(snr_range)
   for t_indx=1:length(T_range)
    T = T_range(t_indx);
 
-   for r=1:maxRealizations
+   parfor r=1:maxRealizations
    disp(['realization: ', num2str(r)]);
 
     [H,Ar,At] = wideband_mmwave_channel(L, Nr, Nt, total_num_of_clusters, total_num_of_rays);
