@@ -93,10 +93,10 @@ for snr_indx = 1:length(snr_range)
 
    end
 
-    mean_error_mcsi(sub_indx, snr_indx) = mean(error_mcsi);
-    mean_error_omp(sub_indx, snr_indx) = mean(error_omp);
-    mean_error_vamp(sub_indx, snr_indx) = mean(error_vamp);
-    mean_error_twostage(sub_indx, snr_indx) = mean(error_twostage);
+    mean_error_mcsi(t_indx, snr_indx) = mean(error_mcsi);
+    mean_error_omp(t_indx, snr_indx) = mean(error_omp);
+    mean_error_vamp(t_indx, snr_indx) = mean(error_vamp);
+    mean_error_twostage(t_indx, snr_indx) = mean(error_twostage);
 
   end
 
