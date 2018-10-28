@@ -43,11 +43,13 @@ for snr_indx = 1:length(snr_range)
     Mr = size(W'*Dr, 2);
     Mt = size(Abar, 1);
     % Random sub-sampling
-    indices = randperm(Nr*T);
-    sT = round(subSamplingRatio_range(sub_indx)*Nr*T);
-    indices_sub = indices(1:sT);
-  	Omega = zeros(Nr, T);
-    Omega(indices_sub) = ones(sT, 1);
+    Omega = zeros(Nr, T);
+    for t = 1:T
+	indices = randperm(Nr);
+        sT = round(subSamplingRatio_range(sub_indx)*Nr);
+        indices_sub = indices(1:sT);
+        Omega(indices_sub, t) = ones(sT, 1);
+    end
     OY = Omega.*Y;
     sT2 = round(subSamplingRatio_range(sub_indx)*T);
     Phi = kron(Abar(:, 1:sT2).', W'*Dr);
