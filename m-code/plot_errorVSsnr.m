@@ -2,8 +2,8 @@ clear;
 clc;
 
 %%% Initialization
-Nt = 8;
-Nr = 32;
+Nt = 32;
+Nr = 16;
 total_num_of_clusters = 2;
 total_num_of_rays = 3;
 Np = total_num_of_clusters*total_num_of_rays;
