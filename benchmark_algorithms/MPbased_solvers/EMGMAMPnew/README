@@ -1,0 +1,39 @@
+% README
+% 
+%
+% Requirements
+% ------------
+% 1. MathWorks MATLAB release 2009b or later.
+%
+% 2. The GAMP software package, (available from Sourceforge at
+% http://sourceforge.net/projects/gampmatlab/files/), installed and
+% included in MATLAB's path.
+% 
+% 
+% Installation Instructions
+% -------------------------
+% 1. Install the GAMP software package from
+% http://sourceforge.net/projects/gampmatlab/files/ and include the folders
+% in MATLAB's path.
+% 
+% 
+% Warranty Disclaimer
+% -------------------
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS 
+% IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+% THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+% PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR 
+% CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
+% EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
+% PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
+% PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+% LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+% NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+% 
+% 
+% Copyright
+% ---------
+% The source codes contained in this software package are copyrighted by
+% Philip Schniter, Jeremy Vila, and Justin Ziniel of the Department of
+% Electrical and Computer Engineering, The Ohio State University, 2011.
