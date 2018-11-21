@@ -27,7 +27,7 @@ error_twostage = zeros(maxMCRealizations,1);
 mean_error_proposed = zeros(length(subSamplingRatio_range), length(snr_range));
 mean_error_omp =  zeros(length(subSamplingRatio_range), length(snr_range));
 mean_error_vamp =  zeros(length(subSamplingRatio_range), length(snr_range));
-mean_error_twostage =  zeros(length(subSamplingRatio_range), length(snr_range));
+% mean_error_twostage =  zeros(length(subSamplingRatio_range), length(snr_range));
 
 Dr = 1/sqrt(Nr)*exp(-1j*[0:Nr-1]'*2*pi*[0:Nr-1]/Nr);
 Dt = 1/sqrt(Nt)*exp(-1j*[0:Nt-1]'*2*pi*[0:Nt-1]/Nt);
@@ -84,15 +84,15 @@ for snr_indx = 1:length(snr_range)
         error_omp(r)=1;
     end
     
-    % Two-stage scheme matrix completion and sparse recovery
-%     disp('Running Two-stage-based Technique...');
-    Y_twostage = mc_svt(Y, OY, Omega, Imax, 0.1);
-    s_twostage = vamp(vec(Y_twostage), kron(Abar.', W'*Dr), snr, 200*L);
-    S_twostage = reshape(s_twostage, Mr, Mt);
-    error_twostage(r) = norm(S_twostage-Zbar)^2/norm(Zbar)^2
-    if(error_twostage(r)>1)
-        error_twostage(r) = 1;
-    end
+%     % Two-stage scheme matrix completion and sparse recovery
+% %     disp('Running Two-stage-based Technique...');
+%     Y_twostage = mc_svt(Y, OY, Omega, Imax, 0.1);
+%     s_twostage = vamp(vec(Y_twostage), kron(Abar.', W'*Dr), snr, 200*L);
+%     S_twostage = reshape(s_twostage, Mr, Mt);
+%     error_twostage(r) = norm(S_twostage-Zbar)^2/norm(Zbar)^2
+%     if(error_twostage(r)>1)
+%         error_twostage(r) = 1;
+%     end
     
     % Proposed
 %     disp('Running ADMM-based MCSI...');
@@ -107,7 +107,7 @@ for snr_indx = 1:length(snr_range)
     mean_error_proposed(sub_indx, snr_indx) = min(mean(error_proposed), 1);
     mean_error_omp(sub_indx, snr_indx) = min(mean(error_omp), 1);
     mean_error_vamp(sub_indx, snr_indx) = min(mean(error_vamp), 1);
-    mean_error_twostage(sub_indx, snr_indx) = min(mean(error_twostage), 1);
+%     mean_error_twostage(sub_indx, snr_indx) = min(mean(error_twostage), 1);
 
   end
 
@@ -119,12 +119,13 @@ p11 = semilogy(snr_range, (mean_error_omp(1, :)));hold on;
 set(p11,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', '>', 'MarkerSize', 8, 'Color', 'Black');
 p12 = semilogy(snr_range, (mean_error_vamp(1, :)));hold on;
 set(p12,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Blue', 'MarkerFaceColor', 'Blue', 'Marker', 'o', 'MarkerSize', 8, 'Color', 'Blue');
-p13 = semilogy(snr_range, (mean_error_twostage(1, :)));hold on;
-set(p13,'LineWidth',2, 'LineStyle', '--', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', 's', 'MarkerSize', 8, 'Color', 'Black');
+% p13 = semilogy(snr_range, (mean_error_twostage(1, :)));hold on;
+% set(p13,'LineWidth',2, 'LineStyle', '--', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', 's', 'MarkerSize', 8, 'Color', 'Black');
 p14 = semilogy(snr_range, (mean_error_proposed(1, :)));hold on;
 set(p14,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Green', 'MarkerFaceColor', 'Green', 'Marker', 'h', 'MarkerSize', 8, 'Color', 'Green');
 
-legend({'TD-OMP [11]', 'VAMP [23]', 'TSSR [15]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
+% legend({'TD-OMP [11]', 'VAMP [23]', 'TSSR [15]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
+legend({'TD-OMP [11]', 'VAMP [23]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
 
 xlabel('SNR (dB)');
 ylabel('NMSE (dB)')
