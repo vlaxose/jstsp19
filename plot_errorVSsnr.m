@@ -5,8 +5,8 @@ addpath('basic_system_functions');
 addpath(genpath('benchmark_algorithms'));
 
 %% Parameter initialization
-Nt = 32;
-Nr = 16;
+Nt = 4;
+Nr = 32;
 Gr = Nr;
 Gt = Nt;
 total_num_of_clusters = 2; % number of clusters for the mmWave channel
