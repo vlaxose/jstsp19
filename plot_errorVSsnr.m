@@ -5,7 +5,11 @@ addpath('basic_system_functions');
 addpath(genpath('benchmark_algorithms'));
 
 %% Parameter initialization
+<<<<<<< HEAD
 Nt = 16;
+=======
+Nt = 4;
+>>>>>>> 5c8b0a563ac490b768f7cce066848c07d90c0f49
 Nr = 32;
 Gr = Nr;
 Gt = Nt;

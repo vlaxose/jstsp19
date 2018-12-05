@@ -6,16 +6,16 @@ addpath('basic_system_functions');
 addpath(genpath('benchmark_algorithms'));
 
 %% Parameter initialization
-Nt = 12;
-Nr = 64;
+Nt = 8;
+Nr = 32;
 total_num_of_clusters = 2;
 total_num_of_rays = 3;
 Np = total_num_of_clusters*total_num_of_rays;
 L = 2;
 snr_range = 10;
-subSamplingRatio = 0.4;
-Imax = 120;
-maxRealizations = 10;
+subSamplingRatio = 0.6;
+Imax = 300;
+maxRealizations = 1;
 T_range = [20:20:100];
 
 %% Variables initialization
@@ -91,7 +91,7 @@ for snr_indx = 1:length(snr_range)
     % Proposed
     disp('Running ADMM-based MCSI...');
     rho = 0.0001;
-    tau_S = 1/norm(OY, 'fro')^2;
+    tau_S = 0.0001; %1/norm(OY, 'fro')^2;
     [~, Y_mcsi] = proposed_algorithm(OY, Omega, W'*Dr, Abar, Imax, rho*norm(OY, 'fro'), tau_S, rho, Y, Zbar);
     S_mcsi = pinv(W'*Dr)*Y_mcsi*pinv(Abar);
     error_proposed(r) = norm(S_mcsi-Zbar)^2/norm(Zbar)^2;

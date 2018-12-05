@@ -19,13 +19,12 @@ function [S, Y, convergence_error] = proposed_algorithm(subY, Omega, A, B, Imax,
   end
   
   K2 = kron(B.', A);
-  invK2 = pinv(K2+1e-4*eye(size(K2)));
 
   for i=1:Imax
 
     % sub 1
     Y = svt(X-1/rho*V1, tau/rho);
-%       norm(Y-Yopt, 'fro')^2/norm(Yopt, 'fro')^2
+      norm(Y-Yopt, 'fro')^2/norm(Yopt, 'fro')^2
     
     % sub 2
     x = (K1+2*rho*eye(N*M))\(vec(V1) + rho*vec(Y) + vec(subY) + vec(V2) + rho*vec(C) + rho*K2*s);
@@ -33,21 +32,8 @@ function [S, Y, convergence_error] = proposed_algorithm(subY, Omega, A, B, Imax,
     
     % sub 3
     k = (vec(X)-1/rho*vec(V2)-vec(C));
-
-%     v = invK2*k;
-%     s1 = max(abs(real(v))-tau_S,0).*sign(real(v)) +1j* max(abs(imag(v))-tau_S,0).*sign(imag(v));
-
-    K2_real = [real(K2) -imag(K2) ; imag(K2) real(K2)];
-    k_real  = [real(k) ; imag(k)];
-    cvx_begin quiet
-      variable s_real(2*Gr*Gt)
-      minimize(rho/2*norm(K2_real*s_real - k_real) + tau_S*norm(s_real,1))
-    cvx_end
-
-    s = s_real(1:Gr*Gt) + 1j*s_real(Gr*Gt+1:end);
-
-%     norm(s1-s)
-    
+    v = K2\k;
+    s = max(abs(real(v))-tau_S,0).*sign(real(v)) +1j* max(abs(imag(v))-tau_S,0).*sign(imag(v));
     S = reshape(s, Gr, Gt);
 
     Xs = A*S*B;
@@ -59,8 +45,8 @@ function [S, Y, convergence_error] = proposed_algorithm(subY, Omega, A, B, Imax,
     V1 = V1 + rho*(Y-X);
     V2 = V2 + rho*(C - X + Xs);
 
-     S_mcsi = pinv(A)*Y*pinv(B);
-     norm(S_mcsi-Zbar)^2/norm(Zbar)^2
+%      S_mcsi = pinv(A)*Y*pinv(B);
+%      norm(S_mcsi-Zbar)^2/norm(Zbar)^2
   end
 
 
