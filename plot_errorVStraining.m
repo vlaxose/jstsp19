@@ -7,7 +7,7 @@ addpath(genpath('benchmark_algorithms'));
 
 %% Parameter initialization
 Nt = 8;
-Nr = 32;
+Nr = 64;
 total_num_of_clusters = 2;
 total_num_of_rays = 3;
 Np = total_num_of_clusters*total_num_of_rays;
@@ -15,8 +15,8 @@ L = 2;
 snr_range = 10;
 subSamplingRatio = 0.6;
 Imax = 300;
-maxRealizations = 1;
-T_range = [20:20:100];
+maxRealizations = 10;
+T_range = [20];
 
 %% Variables initialization
 error_proposed = zeros(maxRealizations,1);
@@ -35,7 +35,7 @@ for snr_indx = 1:length(snr_range)
   for t_indx=1:length(T_range)
    T = T_range(t_indx);
 
-   for r=1:maxRealizations
+   parfor r=1:maxRealizations
    disp(['realization: ', num2str(r)]);
 
     [H,Ar,At] = wideband_mmwave_channel(L, Nr, Nt, total_num_of_clusters, total_num_of_rays);
@@ -61,7 +61,7 @@ for snr_indx = 1:length(snr_range)
     
     % VAMP sparse recovery
     disp('Running VAMP...');
-    s_vamp = vamp(y, Phi+1e-6*eye(size(Phi)), snr, 100*L);
+    s_vamp = vamp(y, Phi+1e-6*eye(size(Phi)), snr, 200*L);
     S_vamp = reshape(s_vamp, Mr, Mt);
     error_vamp(r) = norm(S_vamp-Zbar)^2/norm(Zbar)^2
     if(error_vamp(r)>1)
@@ -71,7 +71,7 @@ for snr_indx = 1:length(snr_range)
     
     % Sparse channel estimation
     disp('Running OMP...');
-    s_omp = OMP(Phi, y, 100*L, snr);
+    s_omp = OMP(Phi, y, 200*L, snr);
     S_omp = reshape(s_omp, Mr, Mt);
     error_omp(r) = norm(S_omp-Zbar)^2/norm(Zbar)^2
     if(error_omp(r)>1)
@@ -91,7 +91,7 @@ for snr_indx = 1:length(snr_range)
     % Proposed
     disp('Running ADMM-based MCSI...');
     rho = 0.0001;
-    tau_S = 0.0001; %1/norm(OY, 'fro')^2;
+    tau_S = 0.00001; %1/norm(OY, 'fro')^2;
     [~, Y_mcsi] = proposed_algorithm(OY, Omega, W'*Dr, Abar, Imax, rho*norm(OY, 'fro'), tau_S, rho, Y, Zbar);
     S_mcsi = pinv(W'*Dr)*Y_mcsi*pinv(Abar);
     error_proposed(r) = norm(S_mcsi-Zbar)^2/norm(Zbar)^2;
