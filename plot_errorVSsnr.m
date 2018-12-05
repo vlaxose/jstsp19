@@ -5,18 +5,18 @@ addpath('basic_system_functions');
 addpath(genpath('benchmark_algorithms'));
 
 %% Parameter initialization
-Nt = 32;
-Nr = 16;
+Nt = 16;
+Nr = 32;
 Gr = Nr;
 Gt = Nt;
 total_num_of_clusters = 2; % number of clusters for the mmWave channel
 total_num_of_rays = 1; % number of rays for the mmWave channel
 Np = total_num_of_clusters*total_num_of_rays; % Total number of distinct paths of the mmWave channel
-L = 5;
+L = 2;
 snr_range = [-20:5:20];
 subSamplingRatio_range = 0.6;
 Imax = 120;
-maxMCRealizations = 1;
+maxMCRealizations = 10;
 T = 180;
 
 %% Variables initialization
@@ -40,7 +40,7 @@ for snr_indx = 1:length(snr_range)
   for sub_indx=1:length(subSamplingRatio_range)
    
       
-  for r=1:maxMCRealizations
+  parfor r=1:maxMCRealizations
       
       
    disp(['realization: ', num2str(r)]);

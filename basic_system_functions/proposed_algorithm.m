@@ -11,8 +11,6 @@ function [S, Y, convergence_error] = proposed_algorithm(subY, Omega, A, B, Imax,
   C = zeros(N, M);
   s = zeros(Gr*Gt, 1);
 
-
-
   K1 = zeros(N*M);
   for i=1:N
     Eii = zeros(N);
@@ -21,7 +19,7 @@ function [S, Y, convergence_error] = proposed_algorithm(subY, Omega, A, B, Imax,
   end
   
   K2 = kron(B.', A);
-  invK2 = pinv(K2);
+  invK2 = pinv(K2+1e-4*eye(size(K2)));
 
   for i=1:Imax
 
