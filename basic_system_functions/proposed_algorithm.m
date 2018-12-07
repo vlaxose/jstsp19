@@ -35,9 +35,8 @@ function [S, Y, convergence_error] = proposed_algorithm(subY, Omega, A, B, Imax,
     % sub 3
     k = (vec(X)-1/rho*vec(V2)-vec(C));
     v = U\(L\k);
-    s = max(abs(real(v))-tau_S,0).*sign(real(v)) +1j* max(abs(imag(v))-tau_S,0).*sign(imag(v));
+    s = max(abs(real(v))-tau_S/rho,0).*sign(real(v)) +1j* max(abs(imag(v))-tau_S/rho,0).*sign(imag(v));
     S = reshape(s, Gr, Gt);
-
     Xs = A*S*B;
 
     % sub 4    

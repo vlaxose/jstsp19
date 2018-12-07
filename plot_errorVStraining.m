@@ -7,16 +7,16 @@ addpath(genpath('benchmark_algorithms'));
 
 %% Parameter initialization
 Nt = 8;
-Nr = 64;
+Nr = 32;
 total_num_of_clusters = 2;
 total_num_of_rays = 3;
 Np = total_num_of_clusters*total_num_of_rays;
-L = 2;
-snr_range = 10;
-subSamplingRatio = 0.6;
-Imax = 300;
-maxRealizations = 10;
-T_range = [20];
+L = 4;
+snr_range = 5;
+subSamplingRatio = 0.4;
+Imax = 200;
+maxRealizations = 1;
+T_range = [10:20:80];
 
 %% Variables initialization
 error_proposed = zeros(maxRealizations,1);
@@ -44,6 +44,7 @@ for snr_indx = 1:length(snr_range)
     Dr = 1/sqrt(Nr)*exp(-1j*(0:Nr-1)'*2*pi*(0:Gr-1)/Gr);
     Dt = 1/sqrt(Nt)*exp(-1j*(0:Nt-1)'*2*pi*(0:Gt-1)/Gt);
     [Y, Abar, Zbar, W] = wideband_hybBF_comm_system_training(H, Dr, Dt, T, snr);
+    Heff = W'*Dr*Zbar*Abar;
     Mr = size(W'*Dr, 2);
     Mt = size(Abar, 1);
     % Random sub-sampling
@@ -63,7 +64,7 @@ for snr_indx = 1:length(snr_range)
     disp('Running VAMP...');
     s_vamp = vamp(y, Phi+1e-6*eye(size(Phi)), snr, 200*L);
     S_vamp = reshape(s_vamp, Mr, Mt);
-    error_vamp(r) = norm(S_vamp-Zbar)^2/norm(Zbar)^2
+    error_vamp(r) = norm(W'*Dr*S_vamp*Abar-Heff)^2/norm(Heff)^2
     if(error_vamp(r)>1)
         error_vamp(r) = 1;
     end
@@ -73,7 +74,7 @@ for snr_indx = 1:length(snr_range)
     disp('Running OMP...');
     s_omp = OMP(Phi, y, 200*L, snr);
     S_omp = reshape(s_omp, Mr, Mt);
-    error_omp(r) = norm(S_omp-Zbar)^2/norm(Zbar)^2
+    error_omp(r) = norm(W'*Dr*S_omp*Abar-Heff)^2/norm(Heff)^2
     if(error_omp(r)>1)
         error_omp(r)=1;
     end
@@ -90,11 +91,11 @@ for snr_indx = 1:length(snr_range)
     
     % Proposed
     disp('Running ADMM-based MCSI...');
-    rho = 0.0001;
-    tau_S = 0.00001; %1/norm(OY, 'fro')^2;
+    rho = 1e-4;
+    tau_S = 1e-8; %1/norm(OY, 'fro')^2;
     [~, Y_mcsi] = proposed_algorithm(OY, Omega, W'*Dr, Abar, Imax, rho*norm(OY, 'fro'), tau_S, rho, Y, Zbar);
-    S_mcsi = pinv(W'*Dr)*Y_mcsi*pinv(Abar);
-    error_proposed(r) = norm(S_mcsi-Zbar)^2/norm(Zbar)^2;
+%     S_mcsi = pinv(W'*Dr)*Y_mcsi*pinv(Abar);
+    error_proposed(r) = norm(Y_mcsi-Heff)^2/norm(Heff)^2;
 
    end
 
