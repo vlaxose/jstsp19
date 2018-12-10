@@ -14,7 +14,7 @@ L = 4;
 snr_range = 5;
 subSamplingRatio_range = [0.2 0.4 0.6 0.8];
 Imax = 200;
-maxMCRealizations = 10;
+maxMCRealizations = 50;
 T = 50;
 
 %% Variables initialization

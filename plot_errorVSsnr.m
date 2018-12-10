@@ -13,7 +13,7 @@ Np = total_num_of_clusters*total_num_of_rays;
 L = 4;
 subSamplingRatio = 0.4;
 Imax = 200;
-maxMCRealizations = 30;
+maxMCRealizations = 50;
 snr_range = [-20:10:20];
 T = 50;
 
