@@ -1,4 +1,4 @@
-function [Y, Abar, Zbar, W] = wideband_hybBF_comm_system_training(H, Dr, Dt, T, snr)
+function [Y, Abar, Zbar, W, Hl] = wideband_hybBF_comm_system_training(H, Dr, Dt, T, snr)
 
    [Nr, Nt, L] = size(H);
 

@@ -13,7 +13,7 @@ Np = total_num_of_clusters*total_num_of_rays;
 L = 4;
 subSamplingRatio = 0.4;
 Imax = 200;
-maxMCRealizations = 50;
+maxMCRealizations = 1;
 snr_range = [-20:10:20];
 T = 50;
 
@@ -38,7 +38,7 @@ for snr_indx = 1:length(snr_range)
   for sub_indx=1:length(subSamplingRatio)
    
       
-  parfor r=1:maxMCRealizations
+  for r=1:maxMCRealizations
       
       
    disp(['realization: ', num2str(r)]);
@@ -63,13 +63,12 @@ for snr_indx = 1:length(snr_range)
     sT2 = round(subSamplingRatio*T);
     Phi = kron(Abar(:, 1:sT2).', W'*Dr);
     y = vec(Y(:,1:sT2));
-    Heff = W'*Dr*Zbar*Abar;
 
     % VAMP sparse recovery
 %     disp('Running VAMP...');
     s_vamp = vamp(y, Phi+1e-6*eye(size(Phi)), snr, 200*L);
     S_vamp = reshape(s_vamp, Mr, Mt);
-    error_vamp(r) = norm(W'*Dr*S_vamp*Abar-Heff)^2/norm(Heff)^2
+    error_vamp(r) = norm(S_vamp-Zbar)^2/norm(Zbar)^2
     if(error_vamp(r)>1)
         error_vamp(r) = 1;
     end
@@ -78,7 +77,7 @@ for snr_indx = 1:length(snr_range)
 %     disp('Running OMP...');
     s_omp = OMP(Phi, y, 200*L, snr);
     S_omp = reshape(s_omp, Mr, Mt);
-    error_omp(r) = norm(W'*Dr*S_omp*Abar-Heff)^2/norm(Heff)^2
+    error_omp(r) = norm(S_omp-Zbar)^2/norm(Zbar)^2
     if(error_omp(r)>1)
         error_omp(r)=1;
     end
@@ -95,11 +94,11 @@ for snr_indx = 1:length(snr_range)
     
     % Proposed
 %     disp('Running ADMM-based MCSI...');
-    rho = 1e-5;
+    rho = 1e-4;
     tau_S = rho/norm(OY, 'fro')^2;
-    [~, Y_proposed] = proposed_algorithm(OY, Omega, W'*Dr, Abar, Imax, rho*norm(OY, 'fro'), tau_S, rho, Y, Zbar);
-%     S_mcsi = pinv(W'*Dr)*Y_mcsi*pinv(Abar);
-    error_proposed(r) = norm(Y_proposed-Heff)^2/norm(Heff)^2;
+    [S_proposed, Y_proposed] = proposed_algorithm(OY, Omega, W'*Dr, Abar, Imax, rho*norm(OY, 'fro'), tau_S, rho, Y, Zbar);
+%     S_proposed = pinv(W'*Dr)*Y_proposed*pinv(Abar);
+    error_proposed(r) = norm(S_proposed-Zbar)^2/norm(Zbar)^2;
 
    end
 
