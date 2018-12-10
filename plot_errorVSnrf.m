@@ -13,10 +13,10 @@ total_num_of_rays = 3;
 Np = total_num_of_clusters*total_num_of_rays;
 L = 4;
 snr_range = 5;
-subSamplingRatio_range = [0.2 0.4 0.6];
+subSamplingRatio_range = [0.2 0.4 0.6 0.8];
 Imax = 200;
-maxMCRealizations = 1;
-T = 80;
+maxMCRealizations = 10;
+T = 5x0;
 
 %% Variables initialization
 error_proposed = zeros(maxMCRealizations,1);
