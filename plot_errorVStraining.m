@@ -1,4 +1,3 @@
-
 clear;
 clc;
 
@@ -15,13 +14,8 @@ L = 4;
 snr_range = 5;
 subSamplingRatio = 0.4;
 Imax = 200;
-<<<<<<< HEAD
-maxRealizations = 1;
-T_range = [10:20:80];
-=======
-maxMCRealizations = 10;
+maxMCRealizations = 50;
 T_range = [20:20:80];
->>>>>>> 5bb75a96866ebd179ef5fdffcba962bf98b6daab
 
 %% Variables initialization
 error_proposed = zeros(maxMCRealizations,1);
@@ -99,19 +93,11 @@ for snr_indx = 1:length(snr_range)
     
     % Proposed
     disp('Running ADMM-based MCSI...');
-<<<<<<< HEAD
-    rho = 1e-4;
-    tau_S = 1e-8; %1/norm(OY, 'fro')^2;
-    [~, Y_mcsi] = proposed_algorithm(OY, Omega, W'*Dr, Abar, Imax, rho*norm(OY, 'fro'), tau_S, rho, Y, Zbar);
-%     S_mcsi = pinv(W'*Dr)*Y_mcsi*pinv(Abar);
-    error_proposed(r) = norm(Y_mcsi-Heff)^2/norm(Heff)^2;
-=======
     rho = 1e-5;
     tau_S = rho/norm(OY, 'fro')^2;
     [~, Y_proposed] = proposed_algorithm(OY, Omega, W'*Dr, Abar, Imax, rho*norm(OY, 'fro'), tau_S, rho, Y, Zbar);
 %     S_mcsi = pinv(W'*Dr)*Y_mcsi*pinv(Abar);
     error_proposed(r) = norm(Y_proposed-Heff)^2/norm(Heff)^2;
->>>>>>> 5bb75a96866ebd179ef5fdffcba962bf98b6daab
 
    end
 

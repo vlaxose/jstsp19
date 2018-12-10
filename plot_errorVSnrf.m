@@ -1,7 +1,6 @@
 clear;
 clc;
 
-
 addpath('basic_system_functions');
 addpath(genpath('benchmark_algorithms'));
 
@@ -16,7 +15,7 @@ snr_range = 5;
 subSamplingRatio_range = [0.2 0.4 0.6 0.8];
 Imax = 200;
 maxMCRealizations = 10;
-T = 5x0;
+T = 50;
 
 %% Variables initialization
 error_proposed = zeros(maxMCRealizations,1);
