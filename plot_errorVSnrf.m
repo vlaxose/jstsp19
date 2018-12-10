@@ -15,8 +15,8 @@ L = 4;
 snr_range = 5;
 subSamplingRatio_range = [0.2 0.4 0.6 0.8];
 Imax = 200;
-maxMCRealizations = 10;
-T = 5x0;
+maxMCRealizations = 50;
+T = 50;
 
 %% Variables initialization
 error_proposed = zeros(maxMCRealizations,1);
@@ -121,8 +121,10 @@ set(p12,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Blue', 'MarkerFaceC
 p14 = semilogy(range, (mean_error_proposed(:, 1)));hold on;
 set(p14,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Green', 'MarkerFaceColor', 'Green', 'Marker', 'h', 'MarkerSize', 8, 'Color', 'Green');
  
-% legend({'TD-OMP [11]', 'VAMP [23]', 'TSSR [15]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
+%legend({'TD-OMP [11]', 'VAMP [23]', 'TSSR [15]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
+
 legend({'TD-OMP [11]', 'VAMP [23]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
+
 
 xlabel('number of RF chains');
 ylabel('NMSE (dB)')
