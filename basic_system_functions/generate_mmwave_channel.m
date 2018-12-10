@@ -46,7 +46,7 @@ end
  
 % Generate the transmit and receive array responces
 function vectors_of_angles=angle(phi, M)
-    Ghz = 90;
+    Ghz = 30;
     % For Uniform Linear Arrays (ULA) compute the phase shift
     wavelength = 30/Ghz; % w=c/lambda
     array_element_spacing = 0.5*wavelength;
