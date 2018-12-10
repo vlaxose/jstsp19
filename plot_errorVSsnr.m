@@ -5,32 +5,26 @@ addpath('basic_system_functions');
 addpath(genpath('benchmark_algorithms'));
 
 %% Parameter initialization
-<<<<<<< HEAD
-Nt = 16;
-=======
-Nt = 4;
->>>>>>> 5c8b0a563ac490b768f7cce066848c07d90c0f49
+Nt = 8;
 Nr = 32;
-Gr = Nr;
-Gt = Nt;
-total_num_of_clusters = 2; % number of clusters for the mmWave channel
-total_num_of_rays = 1; % number of rays for the mmWave channel
-Np = total_num_of_clusters*total_num_of_rays; % Total number of distinct paths of the mmWave channel
-L = 2;
-snr_range = [-20:5:20];
-subSamplingRatio_range = 0.6;
-Imax = 120;
-maxMCRealizations = 10;
-T = 180;
+total_num_of_clusters = 2;
+total_num_of_rays = 3;
+Np = total_num_of_clusters*total_num_of_rays;
+L = 4;
+subSamplingRatio = 0.4;
+Imax = 200;
+maxMCRealizations = 30;
+snr_range = [-20:10:20];
+T = 50;
 
 %% Variables initialization
 error_proposed = zeros(maxMCRealizations,1);
 error_omp = zeros(maxMCRealizations,1);
 error_vamp = zeros(maxMCRealizations,1);
 error_twostage = zeros(maxMCRealizations,1);
-mean_error_proposed = zeros(length(subSamplingRatio_range), length(snr_range));
-mean_error_omp =  zeros(length(subSamplingRatio_range), length(snr_range));
-mean_error_vamp =  zeros(length(subSamplingRatio_range), length(snr_range));
+mean_error_proposed = zeros(length(subSamplingRatio), length(snr_range));
+mean_error_omp =  zeros(length(subSamplingRatio), length(snr_range));
+mean_error_vamp =  zeros(length(subSamplingRatio), length(snr_range));
 % mean_error_twostage =  zeros(length(subSamplingRatio_range), length(snr_range));
 
 Dr = 1/sqrt(Nr)*exp(-1j*[0:Nr-1]'*2*pi*[0:Nr-1]/Nr);
@@ -41,7 +35,7 @@ B = kron(conj(Dt), Dr);
 for snr_indx = 1:length(snr_range)
   snr = 10^(-snr_range(snr_indx)/10);
 
-  for sub_indx=1:length(subSamplingRatio_range)
+  for sub_indx=1:length(subSamplingRatio)
    
       
   parfor r=1:maxMCRealizations
@@ -61,29 +55,30 @@ for snr_indx = 1:length(snr_range)
     Omega = zeros(Nr, T);
     for t = 1:T
         indices = randperm(Nr);
-        sT = round(subSamplingRatio_range*Nr);
+        sT = round(subSamplingRatio*Nr);
         indices_sub = indices(1:sT);
         Omega(indices_sub, t) = ones(sT, 1);
     end
     OY = Omega.*Y;
-    sT2 = round(subSamplingRatio_range*T);
+    sT2 = round(subSamplingRatio*T);
     Phi = kron(Abar(:, 1:sT2).', W'*Dr);
     y = vec(Y(:,1:sT2));
+    Heff = W'*Dr*Zbar*Abar;
 
     % VAMP sparse recovery
 %     disp('Running VAMP...');
-    s_vamp = vamp(y, Phi+1e-6*eye(size(Phi)), snr, 100*L);
+    s_vamp = vamp(y, Phi+1e-6*eye(size(Phi)), snr, 200*L);
     S_vamp = reshape(s_vamp, Mr, Mt);
-    error_vamp(r) = norm(S_vamp-Zbar)^2/norm(Zbar)^2;
+    error_vamp(r) = norm(W'*Dr*S_vamp*Abar-Heff)^2/norm(Heff)^2
     if(error_vamp(r)>1)
         error_vamp(r) = 1;
     end
     
     % Sparse channel estimation
 %     disp('Running OMP...');
-    s_omp = OMP(Phi, y, 100*L, snr);
+    s_omp = OMP(Phi, y, 200*L, snr);
     S_omp = reshape(s_omp, Mr, Mt);
-    error_omp(r) = norm(S_omp-Zbar)^2/norm(Zbar)^2 ;
+    error_omp(r) = norm(W'*Dr*S_omp*Abar-Heff)^2/norm(Heff)^2
     if(error_omp(r)>1)
         error_omp(r)=1;
     end
@@ -100,11 +95,11 @@ for snr_indx = 1:length(snr_range)
     
     % Proposed
 %     disp('Running ADMM-based MCSI...');
-    rho = 0.0001;
-    tau_S = 1/norm(OY, 'fro')^2;
-    [~, Y_mcsi] = proposed_algorithm(OY, Omega, W'*Dr, Abar, Imax, rho*norm(OY, 'fro'), tau_S, rho, Y, Zbar);
-    S_mcsi = pinv(W'*Dr)*Y_mcsi*pinv(Abar);
-    error_proposed(r) = norm(S_mcsi-Zbar)^2/norm(Zbar)^2;
+    rho = 1e-5;
+    tau_S = rho/norm(OY, 'fro')^2;
+    [~, Y_proposed] = proposed_algorithm(OY, Omega, W'*Dr, Abar, Imax, rho*norm(OY, 'fro'), tau_S, rho, Y, Zbar);
+%     S_mcsi = pinv(W'*Dr)*Y_mcsi*pinv(Abar);
+    error_proposed(r) = norm(Y_mcsi-Heff)^2/norm(Heff)^2;
 
    end
 
