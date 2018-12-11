@@ -96,8 +96,8 @@ for snr_indx = 1:length(snr_range)
 %     disp('Running ADMM-based MCSI...');
     rho = 1e-4;
     tau_S = rho/norm(OY, 'fro')^2;
-    [S_proposed, Y_proposed] = proposed_algorithm(OY, Omega, W'*Dr, Abar, Imax, rho*norm(OY, 'fro'), tau_S, rho, Y, Zbar);
-%     S_proposed = pinv(W'*Dr)*Y_proposed*pinv(Abar);
+    [~, Y_proposed] = proposed_algorithm(OY, Omega, W'*Dr, Abar, Imax, rho*norm(OY, 'fro'), tau_S, rho, Y, Zbar);
+    S_proposed = pinv(W'*Dr)*Y_proposed*pinv(Abar);
     error_proposed(r) = norm(S_proposed-Zbar)^2/norm(Zbar)^2;
 
    end
