@@ -26,7 +26,7 @@ function [S, Y, convergence_error] = proposed_algorithm(subY, Omega, A, B, Imax,
 
     % sub 1
     Y = svt(X-1/rho*V1, tau/rho);
-      norm(Y-Yopt, 'fro')^2/norm(Yopt, 'fro')^2
+    [i  norm(Y-Yopt, 'fro')^2/norm(Yopt, 'fro')^2]
     
     % sub 2
     x = (K1+2*rho*eye(N*M))\(vec(V1) + rho*vec(Y) + vec(subY) + vec(V2) + rho*vec(C) + rho*K2*s);

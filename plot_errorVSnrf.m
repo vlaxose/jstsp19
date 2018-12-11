@@ -45,7 +45,6 @@ for snr_indx = 1:length(snr_range)
     [Y, Abar, Zbar, W] = wideband_hybBF_comm_system_training(H, Dr, Dt, T, snr);
     Mr = size(W'*Dr, 2);
     Mt = size(Abar, 1);
-    Heff = W'*Dr*Zbar*Abar;
         
     % Random sub-sampling
     Omega = zeros(Nr, T);
@@ -64,7 +63,7 @@ for snr_indx = 1:length(snr_range)
     disp('Running VAMP...');
     s_vamp = vamp(y, Phi, snr, 200*L);
     S_vamp = reshape(s_vamp, Mr, Mt);
-    error_vamp(r) = norm(W'*Dr*S_vamp*Abar-Heff)^2/norm(Heff)^2
+    error_vamp(r) = norm(S_vamp-Zbar)^2/norm(Zbar)^2
     if(error_vamp(r)>1)
         error_vamp(r) = 1;
     end
@@ -74,7 +73,7 @@ for snr_indx = 1:length(snr_range)
     disp('Running OMP...');
     s_omp = OMP(Phi, y, 200*L, snr);
     S_omp = reshape(s_omp, Mr, Mt);
-    error_omp(r) = norm(W'*Dr*S_omp*Abar-Heff)^2/norm(Heff)^2
+    error_omp(r) = norm(S_omp-Zbar)^2/norm(Zbar)^2
     if(error_omp(r)>1)
         error_omp(r)=1;
     end
@@ -91,11 +90,11 @@ for snr_indx = 1:length(snr_range)
     
     % Proposed
     disp('Running ADMM-based MCSI...');
-    rho = 1e-5;
+    rho = 1e-4;
     tau_S = rho/norm(OY, 'fro')^2;
     [~, Y_proposed] = proposed_algorithm(OY, Omega, W'*Dr, Abar, Imax, rho*norm(OY, 'fro'), tau_S, rho, Y, Zbar);
-%     S_mcsi = pinv(W'*Dr)*Y_mcsi*pinv(Abar);
-    error_proposed(r) = norm(Y_proposed-Heff)^2/norm(Heff)^2;
+    S_proposed = pinv(W'*Dr)*Y_proposed*pinv(Abar);
+    error_proposed(r) = norm(S_proposed-Zbar)^2/norm(Zbar)^2;
 
    end
 
@@ -112,13 +111,13 @@ end
 figure;
 range = round(subSamplingRatio_range*Nr);
 p11 = semilogy(range, (mean_error_omp(:, 1)));hold on;
-set(p11,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', '>', 'MarkerSize', 8, 'Color', 'Black');
+set(p11,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', '>', 'MarkerSize', 6, 'Color', 'Black');
 p12 = semilogy(range, (mean_error_vamp(:, 1)));hold on;
-set(p12,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Blue', 'MarkerFaceColor', 'Blue', 'Marker', 'o', 'MarkerSize', 8, 'Color', 'Blue');
+set(p12,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Blue', 'MarkerFaceColor', 'Blue', 'Marker', 'o', 'MarkerSize', 6, 'Color', 'Blue');
 % p13 = semilogy(range, (mean_error_twostage(:, 1)));hold on;
 % set(p13,'LineWidth',2, 'LineStyle', '--', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', 's', 'MarkerSize', 8, 'Color', 'Black');
 p14 = semilogy(range, (mean_error_proposed(:, 1)));hold on;
-set(p14,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Green', 'MarkerFaceColor', 'Green', 'Marker', 'h', 'MarkerSize', 8, 'Color', 'Green');
+set(p14,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Green', 'MarkerFaceColor', 'Green', 'Marker', 'h', 'MarkerSize', 6, 'Color', 'Green');
  
 %legend({'TD-OMP [11]', 'VAMP [23]', 'TSSR [15]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
 
@@ -130,4 +129,4 @@ ylabel('NMSE (dB)')
 grid on;set(gca,'FontSize',12);
  
 savefig('results/errorVSnrf.fig')
-save('results/errorVSnrf.mat')
+% save('results/errorVSnrf.mat')
