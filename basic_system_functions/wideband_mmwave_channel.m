@@ -1,29 +1,35 @@
-function [H,Ar,At] = wideband_mmwave_channel(L, Mr, Mt, total_num_of_clusters, total_num_of_rays)
+function [H,Zbar,Ar,At,Dr,Dt] = wideband_mmwave_channel(L, Mr, Mt, total_num_of_clusters, total_num_of_rays, Gr, Gt)
 
 % Initialization
 H = zeros(Mr, Mt, L);
+Z = zeros(Mr, Mt, L);
 Ar = zeros(Mr, total_num_of_clusters*total_num_of_rays, L);
 At = zeros(Mt, total_num_of_clusters*total_num_of_rays, L);
+Dr = 1/sqrt(Mr)*exp(-1j*(0:Mr-1)'*2*pi*(0:Gr-1)/Gr);
+Dt = 1/sqrt(Mt)*exp(-1j*(0:Mt-1)'*2*pi*(0:Gt-1)/Gt);
 
-for l=1:L
+  for l=1:L
 
-  Hl = zeros(Mr, Mt);
-  index = 1;
-  for tap = 1:total_num_of_clusters
-      for ray=1:total_num_of_rays
-          rayleigh_coeff = 1/sqrt(2)*(randn(1)+1j*randn(1));
-          Ar(:, index, l) = angle(genLaplacianSamples(1), Mr);
-          At(:, index, l) = angle(genLaplacianSamples(1), Mt);
+   Hl = zeros(Mr, Mt);
+   index = 1;
+   for tap = 1:total_num_of_clusters
+       for ray=1:total_num_of_rays
+           rayleigh_coeff = 1/sqrt(2)*(randn(1)+1j*randn(1));
+           Ar(:, index, l) = angle(genLaplacianSamples(1), Mr);
+           At(:, index, l) = angle(genLaplacianSamples(1), Mt);
 
-          Hl = Hl + rayleigh_coeff*Ar(:, index)*At(:, index)';
+           Hl = Hl + rayleigh_coeff*Ar(:, index)*At(:, index)';
 
-          index = index + 1;
-      end
-      H(:,:,l) = H(:,:,l) + Hl;
+           index = index + 1;
+       end
+       H(:,:,l) = H(:,:,l) + Hl;
+   end
+
+   H(:,:,l) = 1/sqrt(total_num_of_rays*total_num_of_clusters)*H(:,:,l);
+   Z(:,:,l) = Dr'*H(:,:,l)*Dt;
   end
-
-  H(:,:,l) = 1/sqrt(total_num_of_rays*total_num_of_clusters)*H(:,:,l);
-  end
+  
+  Zbar = reshape(Z, Mr, L*Mt);
 end
 
 % Generate the transmit and receive array responces

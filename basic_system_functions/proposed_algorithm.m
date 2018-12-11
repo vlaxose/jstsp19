@@ -1,4 +1,4 @@
-function [S, Y, convergence_error] = proposed_algorithm(subY, Omega, A, B, Imax, tau, tau_S, rho, Yopt, Zbar)
+function [S, Y, convergence_error] = proposed_algorithm(subY, Omega, A, B, Imax, tau, tau_S, rho)
 
   [N, M] = size(subY);
   Gr = size(A, 2);
@@ -26,7 +26,6 @@ function [S, Y, convergence_error] = proposed_algorithm(subY, Omega, A, B, Imax,
 
     % sub 1
     Y = svt(X-1/rho*V1, tau/rho);
-    [i  norm(Y-Yopt, 'fro')^2/norm(Yopt, 'fro')^2]
     
     % sub 2
     x = (K1+2*rho*eye(N*M))\(vec(V1) + rho*vec(Y) + vec(subY) + vec(V2) + rho*vec(C) + rho*K2*s);
@@ -46,8 +45,6 @@ function [S, Y, convergence_error] = proposed_algorithm(subY, Omega, A, B, Imax,
     V1 = V1 + rho*(Y-X);
     V2 = V2 + rho*(C - X + Xs);
 
-%      S_mcsi = pinv(A)*Y*pinv(B);
-%      norm(S_mcsi-Zbar)^2/norm(Zbar)^2
   end
 
 
