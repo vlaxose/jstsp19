@@ -13,7 +13,7 @@ Np = total_num_of_clusters*total_num_of_rays;
 L = 4;
 subSamplingRatio = 0.4;
 Imax = 200;
-maxMCRealizations = 1;
+maxMCRealizations = 100;
 snr_range = [-20:10:20];
 T = 50;
 
@@ -38,7 +38,7 @@ for snr_indx = 1:length(snr_range)
   for sub_indx=1:length(subSamplingRatio)
    
       
-  for r=1:maxMCRealizations
+  parfor r=1:maxMCRealizations
       
       
    disp(['realization: ', num2str(r)]);
@@ -114,13 +114,13 @@ end
 
 figure;
 p11 = semilogy(snr_range, (mean_error_omp(1, :)));hold on;
-set(p11,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', '>', 'MarkerSize', 8, 'Color', 'Black');
+set(p11,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', '>', 'MarkerSize', 6, 'Color', 'Black');
 p12 = semilogy(snr_range, (mean_error_vamp(1, :)));hold on;
-set(p12,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Blue', 'MarkerFaceColor', 'Blue', 'Marker', 'o', 'MarkerSize', 8, 'Color', 'Blue');
+set(p12,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Blue', 'MarkerFaceColor', 'Blue', 'Marker', 'o', 'MarkerSize', 6, 'Color', 'Blue');
 % p13 = semilogy(snr_range, (mean_error_twostage(1, :)));hold on;
 % set(p13,'LineWidth',2, 'LineStyle', '--', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', 's', 'MarkerSize', 8, 'Color', 'Black');
 p14 = semilogy(snr_range, (mean_error_proposed(1, :)));hold on;
-set(p14,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Green', 'MarkerFaceColor', 'Green', 'Marker', 'h', 'MarkerSize', 8, 'Color', 'Green');
+set(p14,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Green', 'MarkerFaceColor', 'Green', 'Marker', 'h', 'MarkerSize', 6, 'Color', 'Green');
 
 % legend({'TD-OMP [11]', 'VAMP [23]', 'TSSR [15]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
 legend({'TD-OMP [11]', 'VAMP [23]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
@@ -129,5 +129,5 @@ xlabel('SNR (dB)');
 ylabel('NMSE (dB)')
 grid on;set(gca,'FontSize',12);
 
-savefig('results/errorVSsnr.fig')
-save('results/errorVSsnr.mat')
+savefig('results/errorVSsnr_T50.fig')
+% save('results/errorVSsnr_T50.mat')
