@@ -1,13 +1,14 @@
-function [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wideband_hybBF_comm_system_training(H, T, snr, subSamplingRatio)
+function [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wideband_hybBF_comm_system_training(H, T, snr, subSamplingRatio, Gr)
 
    %% Parameter initialization
    [Nr, Nt, L] = size(H);
-   
+    
    %% Variables initialization
    Psi_i = zeros(T, T, Nt);
    Psi_bar = zeros(Nt, T, L);
    W_tilde = 1/sqrt(Nr)*fft(eye(Nr));
-   
+%    W_tilde = 1/sqrt(Nr)*exp(1j*2*pi*abs(sin(2*pi*rand(Nr,1)))*[0:1:Nr-1]);
+
    %% Additive white Gaussian noise
    N = sqrt(snr/2)*(randn(Nr, T) + 1j*randn(Nr, T));
    

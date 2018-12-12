@@ -10,13 +10,13 @@ Nr = 32;
 Gr = Nr;
 Gt = Nt;
 total_num_of_clusters = 2;
-total_num_of_rays = 3;
+total_num_of_rays = 1;
 Np = total_num_of_clusters*total_num_of_rays;
-L = 5;
+L = 4;
 snr_range = 5;
 subSamplingRatio = 0.6;
-maxMCRealizations = 30;
-T_range = [10:20:120];
+maxMCRealizations = 10;
+T_range = [20:20:140];
 Imax = 60;
 
 %% Variables initialization
@@ -36,12 +36,12 @@ for snr_indx = 1:length(snr_range)
   for t_indx=1:length(T_range)
    T = T_range(t_indx);
 
-   for r=1:maxMCRealizations
+   parfor r=1:maxMCRealizations
    disp(['traning length = ', num2str(T), ', realization: ', num2str(r)]);
 
     [H,Zbar,Ar,At,Dr,Dt] = wideband_mmwave_channel(L, Nr, Nt, total_num_of_clusters, total_num_of_rays, Gr, Gt);
-    [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wideband_hybBF_comm_system_training(H, T, snr, subSamplingRatio);
-
+    [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wideband_hybBF_comm_system_training(H, T, snr, subSamplingRatio, Gr);
+    numOfnz = length(find(abs(Zbar)>0.4));
     
     % Proposed
 %     disp('Running proposed technique...');
@@ -57,7 +57,7 @@ for snr_indx = 1:length(snr_range)
 
     [~, Y_proposed] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_X, tau_S, rho);
     S_proposed = pinv(A)*Y_proposed*pinv(B);
-    error_proposed(r) = norm(S_proposed-Zbar)^2/norm(Zbar)^2
+    error_proposed(r) = norm(S_proposed-Zbar)^2/norm(Zbar)^2;
     if(error_proposed(r)>1)
         error_proposed(r)=1;
     end
@@ -66,7 +66,7 @@ for snr_indx = 1:length(snr_range)
 %     disp('Running Two-stage-based Technique..');
     Y_twostage = mc_svt(Y_proposed_hbf, Omega, Imax,  tau_X, 0.1);
     S_twostage = pinv(A)*Y_twostage*pinv(B);    
-    error_twostage(r) = norm(S_twostage-Zbar)^2/norm(Zbar)^2
+    error_twostage(r) = norm(S_twostage-Zbar)^2/norm(Zbar)^2;
     if(error_twostage(r)>1)
         error_twostage(r) = 1;
     end
@@ -74,10 +74,11 @@ for snr_indx = 1:length(snr_range)
     % VAMP sparse recovery
 %     disp('Running VAMP...');
     Phi = kron(B.', W_tilde(:, 1:Lr)'*Dr);
+    Phi = Phi + 1e-5*eye(size(Phi));
     y = vec(Y_conventional_hbf);
-    s_vamp = vamp(y, Phi, snr, Imax);
+    s_vamp = vamp(y, Phi, snr, numOfnz);
     S_vamp = reshape(s_vamp, Nr, L*Nt);
-    error_vamp(r) = norm(S_vamp-Zbar)^2/norm(Zbar)^2
+    error_vamp(r) = norm(S_vamp-Zbar)^2/norm(Zbar)^2;
     if(error_vamp(r)>1)
         error_vamp(r) = 1;
     end
@@ -85,9 +86,9 @@ for snr_indx = 1:length(snr_range)
     
     % Sparse channel estimation
 %     disp('Running OMP...');
-    s_omp = OMP(Phi, y, Imax, snr);
+    s_omp = OMP(Phi, y, numOfnz, snr);
     S_omp = reshape(s_omp, Nr, L*Nt);
-    error_omp(r) = norm(S_omp-Zbar)^2/norm(Zbar)^2
+    error_omp(r) = norm(S_omp-Zbar)^2/norm(Zbar)^2;
     if(error_omp(r)>1)
         error_omp(r)=1;
     end

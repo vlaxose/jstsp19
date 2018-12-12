@@ -36,7 +36,7 @@ end
 function vectors_of_angles=angle(phi, M)
 
     % For Uniform Linear Arrays (ULA) compute the phase shift
-    Ghz = 90;
+    Ghz = 30;
     wavelength = 30/Ghz; % w=c/lambda
     array_element_spacing = 0.5*wavelength;
     wavenumber = 2*pi/wavelength; % k = 2pi/lambda
