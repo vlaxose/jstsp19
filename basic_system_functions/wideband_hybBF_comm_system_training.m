@@ -7,7 +7,7 @@ function [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wid
    Psi_i = zeros(T, T, Nt);
    Psi_bar = zeros(Nt, T, L);
    W_tilde = 1/sqrt(Nr)*fft(eye(Nr));
-%    W_tilde = 1/sqrt(Nr)*exp(1j*2*pi*abs(sin(2*pi*rand(Nr,1)))*[0:1:Nr-1]);
+%    W_tilde = 1/sqrt(Nr)*exp(1j*pi*cos(pi*[0:1:Nr-1]'/Nr)*[0:1:Nr-1]);
 
    %% Additive white Gaussian noise
    N = sqrt(snr/2)*(randn(Nr, T) + 1j*randn(Nr, T));
@@ -25,6 +25,17 @@ function [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wid
     end
     R = R + H(:,:,l)*Psi_bar(:,:,l);
    end
+
+% % %    % Alternative formulation
+% % %    Y = N;
+% % %    for k=1:Nt
+% % %     Hl=[];
+% % %     for l=1:L
+% % %       Hl = [Hl H(:,k,l)];
+% % %     end
+% % %     Y = Y + Hl*Psi_i(1:L,:,k);
+% % %    end
+% % %    norm(Y-R)
    
    %% Proposed HBF architecture
    Omega = zeros(Nr, T);  
@@ -37,7 +48,6 @@ function [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wid
    Y_proposed_hbf = Omega.*(W_tilde'*R);
    
    %% Conventional HBF architecture
-   W = W_tilde(:, 1:Lr);
-   Y_conventional_hbf = W'*R;
+   Y_conventional_hbf = W_tilde'*R;
    
 end

@@ -21,7 +21,7 @@ function [S, Y, convergence_error] = proposed_algorithm(subY, Omega, A, B, Imax,
   K2 = kron(B.', A);
 
   [L,U] = lu(K2);
-  
+
   for i=1:Imax
 
     % sub 1

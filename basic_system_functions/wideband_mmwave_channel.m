@@ -7,7 +7,7 @@ Ar = zeros(Mr, total_num_of_clusters*total_num_of_rays, L);
 At = zeros(Mt, total_num_of_clusters*total_num_of_rays, L);
 Dr = 1/sqrt(Mr)*exp(-1j*(0:Mr-1)'*2*pi*(0:Gr-1)/Gr);
 Dt = 1/sqrt(Mt)*exp(-1j*(0:Mt-1)'*2*pi*(0:Gt-1)/Gt);
-
+   
   for l=1:L
 
    Hl = zeros(Mr, Mt);

@@ -5,17 +5,19 @@ addpath('basic_system_functions');
 addpath(genpath('benchmark_algorithms'));
 
 %% Parameter initialization
-Nt = 8;
+Nt = 4;
 Nr = 32;
+Gr = Nr;
+Gt = Nt;
 total_num_of_clusters = 2;
 total_num_of_rays = 3;
 Np = total_num_of_clusters*total_num_of_rays;
 L = 4;
-subSamplingRatio = 0.4;
-Imax = 200;
-maxMCRealizations = 100;
-snr_range = [-20:10:20];
-T = 50;
+snr_range = [-15:5:15];
+subSamplingRatio = 0.75;
+maxMCRealizations = 30;
+T = 70;
+Imax = 50;
 
 %% Variables initialization
 error_proposed = zeros(maxMCRealizations,1);
@@ -25,87 +27,74 @@ error_twostage = zeros(maxMCRealizations,1);
 mean_error_proposed = zeros(length(subSamplingRatio), length(snr_range));
 mean_error_omp =  zeros(length(subSamplingRatio), length(snr_range));
 mean_error_vamp =  zeros(length(subSamplingRatio), length(snr_range));
-% mean_error_twostage =  zeros(length(subSamplingRatio_range), length(snr_range));
-
-Dr = 1/sqrt(Nr)*exp(-1j*[0:Nr-1]'*2*pi*[0:Nr-1]/Nr);
-Dt = 1/sqrt(Nt)*exp(-1j*[0:Nt-1]'*2*pi*[0:Nt-1]/Nt);
-B = kron(conj(Dt), Dr);
+mean_error_twostage =  zeros(length(subSamplingRatio), length(snr_range));
 
 %% Iterations for different SNRs, training length and MC realizations
 for snr_indx = 1:length(snr_range)
-  snr = 10^(-snr_range(snr_indx)/10);
+  square_noise_variance = 10^(-snr_range(snr_indx)/10);
 
   for sub_indx=1:length(subSamplingRatio)
    
       
   parfor r=1:maxMCRealizations
       
-      
-   disp(['realization: ', num2str(r)]);
+   disp(['square_noise_variance = ', num2str(square_noise_variance), ', realization: ', num2str(r)]);
 
-    % Create the wideband mmWave MIMO channel
-    [H,Ar,At] = wideband_mmwave_channel(L, Nr, Nt, total_num_of_clusters, total_num_of_rays);
+    [H,Zbar,Ar,At,Dr,Dt] = wideband_mmwave_channel(L, Nr, Nt, total_num_of_clusters, total_num_of_rays, Gr, Gt);
+    [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wideband_hybBF_comm_system_training(H, T, square_noise_variance, subSamplingRatio, Gr);
+    numOfnz = 100;%length(find(abs(Zbar)/norm(Zbar)^2>1e-3));
     
-    % Get the measurements at the RX of the transmitted training symbols       
-    [Y, Abar, Zbar, W] = wideband_hybBF_comm_system_training(H, Dr, Dt, T, snr);
-    Mr = size(W'*Dr, 2);
-    Mt = size(Abar, 1);
-    
-    % Random sub-sampling
-    Omega = zeros(Nr, T);
-    for t = 1:T
-        indices = randperm(Nr);
-        sT = round(subSamplingRatio*Nr);
-        indices_sub = indices(1:sT);
-        Omega(indices_sub, t) = ones(sT, 1);
+%     disp('Running proposed technique...');
+    tau_X = 1/norm(Y_proposed_hbf, 'fro')^2;
+    tau_S = tau_X/2;
+    eigvalues = eigs(Y_proposed_hbf'*Y_proposed_hbf);
+    rho = sqrt(min(eigvalues)*(tau_X+tau_S)/2);
+    A = W_tilde'*Dr;
+    B = zeros(L*Nt, T);
+    for l=1:L
+      B((l-1)*Nt+1:l*Nt, :) = Dt'*Psi_bar(:,:,l);
     end
-    OY = Omega.*Y;
-    sT2 = round(subSamplingRatio*T);
-    Phi = kron(Abar(:, 1:sT2).', W'*Dr);
-    y = vec(Y(:,1:sT2));
 
-    % VAMP sparse recovery
+    [~, Y_proposed] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_X, tau_S, rho);
+    S_proposed = pinv(A)*Y_proposed*pinv(B);
+    error_proposed(r) = norm(S_proposed-Zbar)^2/norm(Zbar)^2;
+    if(error_proposed(r)>1)
+        error_proposed(r)=1;
+    end
+  
+%     disp('Running Two-stage-based Technique..');
+    Y_twostage = mc_svt(Y_proposed_hbf, Omega, Imax,  tau_X, 0.1);
+    S_twostage = pinv(A)*Y_twostage*pinv(B);    
+    error_twostage(r) = norm(S_twostage-Zbar)^2/norm(Zbar)^2;
+    if(error_twostage(r)>1)
+        error_twostage(r) = 1;
+    end
+    
 %     disp('Running VAMP...');
-    s_vamp = vamp(y, Phi+1e-6*eye(size(Phi)), snr, 200*L);
-    S_vamp = reshape(s_vamp, Mr, Mt);
-    error_vamp(r) = norm(S_vamp-Zbar)^2/norm(Zbar)^2
+    Phi = kron(B.', A);
+    y = vec(Y_conventional_hbf);
+    s_vamp = vamp(y, Phi, square_noise_variance, numOfnz);
+    S_vamp = reshape(s_vamp, Nr, L*Nt);
+    error_vamp(r) = norm(S_vamp-Zbar)^2/norm(Zbar)^2;
     if(error_vamp(r)>1)
         error_vamp(r) = 1;
     end
+       
     
-    % Sparse channel estimation
 %     disp('Running OMP...');
-    s_omp = OMP(Phi, y, 200*L, snr);
-    S_omp = reshape(s_omp, Mr, Mt);
-    error_omp(r) = norm(S_omp-Zbar)^2/norm(Zbar)^2
+    s_omp = OMP(Phi, y, numOfnz, square_noise_variance);
+    S_omp = reshape(s_omp, Nr, L*Nt);
+    error_omp(r) = norm(S_omp-Zbar)^2/norm(Zbar)^2;
     if(error_omp(r)>1)
         error_omp(r)=1;
     end
-    
-%     % Two-stage scheme matrix completion and sparse recovery
-% %     disp('Running Two-stage-based Technique...');
-%     Y_twostage = mc_svt(Y, OY, Omega, Imax, 0.1);
-%     s_twostage = vamp(vec(Y_twostage), kron(Abar.', W'*Dr), snr, 200*L);
-%     S_twostage = reshape(s_twostage, Mr, Mt);
-%     error_twostage(r) = norm(S_twostage-Zbar)^2/norm(Zbar)^2
-%     if(error_twostage(r)>1)
-%         error_twostage(r) = 1;
-%     end
-    
-    % Proposed
-%     disp('Running ADMM-based MCSI...');
-    rho = 1e-4;
-    tau_S = rho/norm(OY, 'fro')^2;
-    [~, Y_proposed] = proposed_algorithm(OY, Omega, W'*Dr, Abar, Imax, rho*norm(OY, 'fro'), tau_S, rho, Y, Zbar);
-    S_proposed = pinv(W'*Dr)*Y_proposed*pinv(Abar);
-    error_proposed(r) = norm(S_proposed-Zbar)^2/norm(Zbar)^2;
-
+  
    end
 
     mean_error_proposed(sub_indx, snr_indx) = min(mean(error_proposed), 1);
     mean_error_omp(sub_indx, snr_indx) = min(mean(error_omp), 1);
     mean_error_vamp(sub_indx, snr_indx) = min(mean(error_vamp), 1);
-%     mean_error_twostage(sub_indx, snr_indx) = min(mean(error_twostage), 1);
+    mean_error_twostage(sub_indx, snr_indx) = min(mean(error_twostage), 1);
 
   end
 
@@ -117,17 +106,16 @@ p11 = semilogy(snr_range, (mean_error_omp(1, :)));hold on;
 set(p11,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', '>', 'MarkerSize', 6, 'Color', 'Black');
 p12 = semilogy(snr_range, (mean_error_vamp(1, :)));hold on;
 set(p12,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Blue', 'MarkerFaceColor', 'Blue', 'Marker', 'o', 'MarkerSize', 6, 'Color', 'Blue');
-% p13 = semilogy(snr_range, (mean_error_twostage(1, :)));hold on;
-% set(p13,'LineWidth',2, 'LineStyle', '--', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', 's', 'MarkerSize', 8, 'Color', 'Black');
+p13 = semilogy(snr_range, (mean_error_twostage(1, :)));hold on;
+set(p13,'LineWidth',2, 'LineStyle', '--', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', 's', 'MarkerSize', 6, 'Color', 'Black');
 p14 = semilogy(snr_range, (mean_error_proposed(1, :)));hold on;
 set(p14,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Green', 'MarkerFaceColor', 'Green', 'Marker', 'h', 'MarkerSize', 6, 'Color', 'Green');
+ 
+legend({'TD-OMP [11]', 'VAMP [23]', 'TSSR [15]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
 
-% legend({'TD-OMP [11]', 'VAMP [23]', 'TSSR [15]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
-legend({'TD-OMP [11]', 'VAMP [23]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
 
 xlabel('SNR (dB)');
 ylabel('NMSE (dB)')
 grid on;set(gca,'FontSize',12);
 
-savefig('results/errorVSsnr_T50.fig')
-% save('results/errorVSsnr_T50.mat')
+savefig('results/errorVSsnr.fig')
