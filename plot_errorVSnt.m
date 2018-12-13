@@ -5,18 +5,17 @@ addpath('basic_system_functions');
 addpath(genpath('benchmark_algorithms'));
 
 %% Parameter initialization
-Nt = 12;
-Nr = 12;
+Nt_range = [2:12];
+Nr = 32;
 Gr = Nr;
-Gt = Nt;
 total_num_of_clusters = 2;
 total_num_of_rays = 3;
 Np = total_num_of_clusters*total_num_of_rays;
 L = 4;
 snr_range = 5;
-subSamplingRatio = 1; % Lr=Nr i.e., Digital BeamForming
-maxMCRealizations = 1;
-T_range = [50];
+subSamplingRatio = 0.75;
+maxMCRealizations = 50;
+T = 50;
 Imax = 100;
 
 %% Variables initialization
@@ -24,23 +23,24 @@ error_proposed = zeros(maxMCRealizations,1);
 error_omp = zeros(maxMCRealizations,1);
 error_vamp = zeros(maxMCRealizations,1);
 error_twostage = zeros(maxMCRealizations,1);
-mean_error_proposed = zeros(length(T_range), length(snr_range));
-mean_error_omp =  zeros(length(T_range), length(snr_range));
-mean_error_vamp =  zeros(length(T_range), length(snr_range));
-mean_error_twostage =  zeros(length(T_range), length(snr_range));
+mean_error_proposed = zeros(length(Nt_range), length(snr_range));
+mean_error_omp =  zeros(length(Nt_range), length(snr_range));
+mean_error_vamp =  zeros(length(Nt_range), length(snr_range));
+mean_error_twostage =  zeros(length(Nt_range), length(snr_range));
     
 %% Iterations for different SNRs, training length and MC realizations
 for snr_indx = 1:length(snr_range)
-  square_noise_variance = 10^(-snr_range(snr_indx)/10);
+  snr = 10^(-snr_range(snr_indx)/10);
   
-  for t_indx=1:length(T_range)
-   T = T_range(t_indx);
-
-   for r=1:maxMCRealizations
-   disp(['traning length = ', num2str(T), ', realization: ', num2str(r)]);
+  for nt_indx=1:length(Nt_range)
+   Nt = Nt_range(nt_indx);
+   Gt = Nt;
+   
+   parfor r=1:maxMCRealizations
+   disp(['Nt = ', num2str(Nt), ', realization: ', num2str(r)]);
 
     [H,Zbar,Ar,At,Dr,Dt] = wideband_mmwave_channel(L, Nr, Nt, total_num_of_clusters, total_num_of_rays, Gr, Gt);
-    [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wideband_hybBF_comm_system_training(H, T, square_noise_variance, subSamplingRatio, Gr);
+    [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wideband_hybBF_comm_system_training(H, T, snr, subSamplingRatio, Gr);
     numOfnz = 100;
 %     length(find(abs(Zbar)/norm(Zbar)^2>1e-3))
 
@@ -93,10 +93,10 @@ for snr_indx = 1:length(snr_range)
 
    end
 
-    mean_error_proposed(t_indx, snr_indx) = mean(error_proposed);
-    mean_error_omp(t_indx, snr_indx) = mean(error_omp);
-    mean_error_vamp(t_indx, snr_indx) = mean(error_vamp);
-    mean_error_twostage(t_indx, snr_indx) = mean(error_twostage);
+    mean_error_proposed(nt_indx, snr_indx) = mean(error_proposed);
+    mean_error_omp(nt_indx, snr_indx) = mean(error_omp);
+    mean_error_vamp(nt_indx, snr_indx) = mean(error_vamp);
+    mean_error_twostage(nt_indx, snr_indx) = mean(error_twostage);
 
   end
 
@@ -104,21 +104,21 @@ end
 
 
 figure;
-p11 = semilogy(T_range, (mean_error_omp(:, 1)));hold on;
+p11 = semilogy(Nt_range, (mean_error_omp(:, 1)));hold on;
 set(p11,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', '>', 'MarkerSize', 6, 'Color', 'Black');
-p12 = semilogy(T_range, (mean_error_vamp(:, 1)));hold on;
+p12 = semilogy(Nt_range, (mean_error_vamp(:, 1)));hold on;
 set(p12,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Blue', 'MarkerFaceColor', 'Blue', 'Marker', 'o', 'MarkerSize', 6, 'Color', 'Blue');
-p13 = semilogy(T_range, (mean_error_twostage(:, 1)));hold on;
+p13 = semilogy(Nt_range, (mean_error_twostage(:, 1)));hold on;
 set(p13,'LineWidth',2, 'LineStyle', '--', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', 's', 'MarkerSize', 6, 'Color', 'Black');
-p14 = semilogy(T_range, (mean_error_proposed(:, 1)));hold on;
+p14 = semilogy(Nt_range, (mean_error_proposed(:, 1)));hold on;
 set(p14,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Green', 'MarkerFaceColor', 'Green', 'Marker', 'h', 'MarkerSize', 6, 'Color', 'Green');
  
 legend({'TD-OMP [11]', 'VAMP [23]', 'TSSR [15]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
 
 
-xlabel('number of training blocks');
+xlabel('number of transmitting antennas');
 ylabel('NMSE (dB)')
 grid on;set(gca,'FontSize',12);
  
-savefig('results/errorVStraining_hbf.fig')
+savefig('results/errorVSnt.fig')
 
