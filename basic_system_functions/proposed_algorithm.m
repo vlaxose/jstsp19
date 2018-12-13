@@ -45,8 +45,8 @@ function [S, Y, convergence_error] = proposed_algorithm(subY, Omega, A, B, Imax,
     V1 = V1 + rho*(Y-X);
     V2 = V2 + rho*(C - X + Xs);
 
-    convergence_error(i, 1) = norm(V1)^2;
-    convergence_error(i, 2) = norm(V2)^2;
+    convergence_error(i, 1) = norm(V1)^2/norm(X)^2;
+    convergence_error(i, 2) = norm(V2)^2/norm(X)^2;
   end
 
 

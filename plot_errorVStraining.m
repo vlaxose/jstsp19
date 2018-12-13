@@ -31,7 +31,7 @@ mean_error_twostage =  zeros(length(T_range), length(snr_range));
     
 %% Iterations for different SNRs, training length and MC realizations
 for snr_indx = 1:length(snr_range)
-  snr = 10^(-snr_range(snr_indx)/10);
+  square_noise_variance = 10^(-snr_range(snr_indx)/10);
   
   for t_indx=1:length(T_range)
    T = T_range(t_indx);
