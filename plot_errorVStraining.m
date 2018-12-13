@@ -5,18 +5,18 @@ addpath('basic_system_functions');
 addpath(genpath('benchmark_algorithms'));
 
 %% Parameter initialization
-Nt = 4;
+Nt = 12;
 Nr = 32;
 Gr = Nr;
 Gt = Nt;
 total_num_of_clusters = 2;
-total_num_of_rays = 1;
+total_num_of_rays = 3;
 Np = total_num_of_clusters*total_num_of_rays;
 L = 4;
-snr_range = 15;
-subSamplingRatio = 1;
-maxMCRealizations = 1;
-T_range = [20:40:180];
+snr_range = 5;
+subSamplingRatio = 0.75; % Lr=Nr i.e., Digital BeamForming
+maxMCRealizations = 4;
+T_range = [10:40:150];
 Imax = 50;
 
 %% Variables initialization
@@ -36,12 +36,12 @@ for snr_indx = 1:length(snr_range)
   for t_indx=1:length(T_range)
    T = T_range(t_indx);
 
-   parfor r=1:maxMCRealizations
+   for r=1:maxMCRealizations
    disp(['traning length = ', num2str(T), ', realization: ', num2str(r)]);
 
     [H,Zbar,Ar,At,Dr,Dt] = wideband_mmwave_channel(L, Nr, Nt, total_num_of_clusters, total_num_of_rays, Gr, Gt);
     [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wideband_hybBF_comm_system_training(H, T, snr, subSamplingRatio, Gr);
-    numOfnz = 80;%length(find(abs(Zbar)/norm(Zbar)^2>1e-3));
+    numOfnz = 100;%length(find(abs(Zbar)/norm(Zbar)^2>1e-3));
     
 %     disp('Running proposed technique...');
     tau_X = 1/norm(Y_proposed_hbf, 'fro')^2;
@@ -70,7 +70,7 @@ for snr_indx = 1:length(snr_range)
     end
     
 %     disp('Running VAMP...');
-    Phi = kron(B.', W_tilde(:, 1:Lr)'*Dr);
+    Phi = kron(B.', A);
     y = vec(Y_conventional_hbf);
     s_vamp = vamp(y, Phi, snr, numOfnz);
     S_vamp = reshape(s_vamp, Nr, L*Nt);
@@ -119,5 +119,5 @@ xlabel('number of training blocks');
 ylabel('NMSE (dB)')
 grid on;set(gca,'FontSize',12);
  
-savefig('results/errorVStraining.fig')
-% save('results/errorVStraining.mat')
+savefig('results/errorVStraining_hbf.fig')
+
