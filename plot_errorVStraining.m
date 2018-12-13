@@ -6,7 +6,7 @@ addpath(genpath('benchmark_algorithms'));
 
 %% Parameter initialization
 Nt = 12;
-Nr = 32;
+Nr = 12;
 Gr = Nr;
 Gt = Nt;
 total_num_of_clusters = 2;
@@ -14,10 +14,10 @@ total_num_of_rays = 3;
 Np = total_num_of_clusters*total_num_of_rays;
 L = 4;
 snr_range = 5;
-subSamplingRatio = 0.75; % Lr=Nr i.e., Digital BeamForming
-maxMCRealizations = 4;
-T_range = [10:40:150];
-Imax = 50;
+subSamplingRatio = 1; % Lr=Nr i.e., Digital BeamForming
+maxMCRealizations = 1;
+T_range = [50];
+Imax = 100;
 
 %% Variables initialization
 error_proposed = zeros(maxMCRealizations,1);
@@ -41,8 +41,9 @@ for snr_indx = 1:length(snr_range)
 
     [H,Zbar,Ar,At,Dr,Dt] = wideband_mmwave_channel(L, Nr, Nt, total_num_of_clusters, total_num_of_rays, Gr, Gt);
     [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wideband_hybBF_comm_system_training(H, T, snr, subSamplingRatio, Gr);
-    numOfnz = 100;%length(find(abs(Zbar)/norm(Zbar)^2>1e-3));
-    
+    numOfnz = 100;
+%     length(find(abs(Zbar)/norm(Zbar)^2>1e-3))
+
 %     disp('Running proposed technique...');
     tau_X = 1/norm(Y_proposed_hbf, 'fro')^2;
     tau_S = tau_X/2;
@@ -53,8 +54,8 @@ for snr_indx = 1:length(snr_range)
     for l=1:L
       B((l-1)*Nt+1:l*Nt, :) = Dt'*Psi_bar(:,:,l);
     end
-
     [~, Y_proposed] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_X, tau_S, rho);
+
     S_proposed = pinv(A)*Y_proposed*pinv(B);
     error_proposed(r) = norm(S_proposed-Zbar)^2/norm(Zbar)^2;
     if(error_proposed(r)>1)
