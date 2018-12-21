@@ -6,7 +6,7 @@ addpath(genpath('benchmark_algorithms'));
 
 %% Parameter initialization
 Nt_range = [2:12];
-Nr = 32;
+Nr = 64;
 Gr = Nr;
 total_num_of_clusters = 2;
 total_num_of_rays = 3;
@@ -14,8 +14,8 @@ Np = total_num_of_clusters*total_num_of_rays;
 L = 4;
 snr_range = 5;
 subSamplingRatio = 0.75;
-maxMCRealizations = 50;
-T = 50;
+maxMCRealizations = 30;
+T = 70;
 Imax = 100;
 
 %% Variables initialization
@@ -116,7 +116,7 @@ set(p14,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Green', 'MarkerFace
 legend({'TD-OMP [11]', 'VAMP [23]', 'TSSR [15]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
 
 
-xlabel('number of transmitting antennas');
+xlabel('number of transmitting antennas/streams');
 ylabel('NMSE (dB)')
 grid on;set(gca,'FontSize',12);
  
