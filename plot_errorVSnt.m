@@ -14,9 +14,9 @@ Np = total_num_of_clusters*total_num_of_rays;
 L = 4;
 snr_range = 5;
 subSamplingRatio = 0.75;
-maxMCRealizations = 30;
+maxMCRealizations = 1;
 T = 70;
-Imax = 100;
+Imax = 50;
 
 %% Variables initialization
 error_proposed = zeros(maxMCRealizations,1);
@@ -54,7 +54,7 @@ for snr_indx = 1:length(snr_range)
     for l=1:L
       B((l-1)*Nt+1:l*Nt, :) = Dt'*Psi_bar(:,:,l);
     end
-    [~, Y_proposed] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_X, tau_S, rho);
+    [~, Y_proposed] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_X, tau_S, rho, 'approximate');
 
     S_proposed = pinv(A)*Y_proposed*pinv(B);
     error_proposed(r) = norm(S_proposed-Zbar)^2/norm(Zbar)^2;
@@ -113,7 +113,7 @@ set(p13,'LineWidth',2, 'LineStyle', '--', 'MarkerEdgeColor', 'Black', 'MarkerFac
 p14 = semilogy(Nt_range, (mean_error_proposed(:, 1)));hold on;
 set(p14,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Green', 'MarkerFaceColor', 'Green', 'Marker', 'h', 'MarkerSize', 6, 'Color', 'Green');
  
-legend({'TD-OMP [11]', 'VAMP [23]', 'TSSR [15]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
+legend({'TD-OMP', 'VAMP', 'TSSR', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
 
 
 xlabel('number of transmitting antennas/streams');

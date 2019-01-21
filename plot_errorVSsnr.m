@@ -5,8 +5,8 @@ addpath('basic_system_functions');
 addpath(genpath('benchmark_algorithms'));
 
 %% Parameter initialization
-Nt = 4;
-Nr = 32;
+Nt = 8;
+Nr = 64;
 Gr = Nr;
 Gt = Nt;
 total_num_of_clusters = 2;
@@ -17,7 +17,7 @@ snr_range = [-15:5:15];
 subSamplingRatio = 0.75;
 maxMCRealizations = 30;
 T = 70;
-Imax = 50;
+Imax = 100;
 
 %% Variables initialization
 error_proposed = zeros(maxMCRealizations,1);
@@ -55,7 +55,7 @@ for snr_indx = 1:length(snr_range)
       B((l-1)*Nt+1:l*Nt, :) = Dt'*Psi_bar(:,:,l);
     end
 
-    [~, Y_proposed] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_X, tau_S, rho);
+    [~, Y_proposed] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_X, tau_S, rho, 'approximate');
     S_proposed = pinv(A)*Y_proposed*pinv(B);
     error_proposed(r) = norm(S_proposed-Zbar)^2/norm(Zbar)^2;
     if(error_proposed(r)>1)

@@ -27,7 +27,7 @@ square_noise_variance = 10^(-snr_db/10);
 mean_error_1 = zeros(Imax, 2);
 convergence_error_1 = zeros(Imax, 2);
 
-parfor r=1:maxMCRealizations
+for r=1:maxMCRealizations
     disp(['realization: ', num2str(r)]);
  
 

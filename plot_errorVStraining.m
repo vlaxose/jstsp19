@@ -5,8 +5,8 @@ addpath('basic_system_functions');
 addpath(genpath('benchmark_algorithms'));
 
 %% Parameter initialization
-Nt = 12;
-Nr = 12;
+Nt = 4;
+Nr = 32;
 Gr = Nr;
 Gt = Nt;
 total_num_of_clusters = 2;
@@ -14,8 +14,8 @@ total_num_of_rays = 3;
 Np = total_num_of_clusters*total_num_of_rays;
 L = 4;
 snr_range = 5;
-subSamplingRatio = 1; % Lr=Nr i.e., Digital BeamForming
-maxMCRealizations = 1;
+subSamplingRatio = 0.75; % Lr=Nr i.e., Digital BeamForming
+maxMCRealizations = 10;
 T_range = [50];
 Imax = 100;
 
@@ -36,7 +36,7 @@ for snr_indx = 1:length(snr_range)
   for t_indx=1:length(T_range)
    T = T_range(t_indx);
 
-   for r=1:maxMCRealizations
+   parfor r=1:maxMCRealizations
    disp(['traning length = ', num2str(T), ', realization: ', num2str(r)]);
 
     [H,Zbar,Ar,At,Dr,Dt] = wideband_mmwave_channel(L, Nr, Nt, total_num_of_clusters, total_num_of_rays, Gr, Gt);
@@ -54,7 +54,7 @@ for snr_indx = 1:length(snr_range)
     for l=1:L
       B((l-1)*Nt+1:l*Nt, :) = Dt'*Psi_bar(:,:,l);
     end
-    [~, Y_proposed] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_X, tau_S, rho);
+    [~, Y_proposed] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_X, tau_S, rho, 'approximate');
 
     S_proposed = pinv(A)*Y_proposed*pinv(B);
     error_proposed(r) = norm(S_proposed-Zbar)^2/norm(Zbar)^2;
@@ -73,7 +73,7 @@ for snr_indx = 1:length(snr_range)
 %     disp('Running VAMP...');
     Phi = kron(B.', A);
     y = vec(Y_conventional_hbf);
-    s_vamp = vamp(y, Phi, snr, numOfnz);
+    s_vamp = vamp(y, Phi, square_noise_variance, numOfnz);
     S_vamp = reshape(s_vamp, Nr, L*Nt);
     error_vamp(r) = norm(S_vamp-Zbar)^2/norm(Zbar)^2;
     if(error_vamp(r)>1)
@@ -82,7 +82,7 @@ for snr_indx = 1:length(snr_range)
        
     
 %     disp('Running OMP...');
-    s_omp = OMP(Phi, y, numOfnz, snr);
+    s_omp = OMP(Phi, y, numOfnz, square_noise_variance);
     S_omp = reshape(s_omp, Nr, L*Nt);
     error_omp(r) = norm(S_omp-Zbar)^2/norm(Zbar)^2;
     if(error_omp(r)>1)

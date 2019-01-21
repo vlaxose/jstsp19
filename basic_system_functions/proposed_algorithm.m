@@ -1,4 +1,4 @@
-function [S, Y, convergence_error] = proposed_algorithm(subY, Omega, A, B, Imax, tau, tau_S, rho)
+function [S, Y, convergence_error] = proposed_algorithm(subY, Omega, A, B, Imax, tau, tau_S, rho, type)
 
   [N, M] = size(subY);
   Gr = size(A, 2);
@@ -17,23 +17,40 @@ function [S, Y, convergence_error] = proposed_algorithm(subY, Omega, A, B, Imax,
     Eii(i,i) = 1;
     K1 = K1 + kron(diag(Omega(i, :))', Eii);
   end
+  iK1 = sparse(inv(K1+2*rho*eye(N*M)));
   
   K2 = kron(B.', A);
+  switch(type)
+      case 'approximate'
+        R = K2'*K2;
+        v = zeros(size(R, 2), 1);  
+      otherwise
+          [L,U] = lu(K2);
+  end
 
-  [L,U] = lu(K2);
-
+ 
   for i=1:Imax
 
     % sub 1
     Y = svt(X-1/rho*V1, tau/rho);
     
     % sub 2
-    x = (K1+2*rho*eye(N*M))\(vec(V1) + rho*vec(Y) + vec(subY) + vec(V2) + rho*vec(C) + rho*K2*s);
+    b=(vec(V1) + rho*vec(Y) + vec(subY) + vec(V2) + rho*vec(C) + rho*K2*s);
+    x = iK1*b;
     X = reshape(x, N, M);
     
     % sub 3
     k = (vec(X)-1/rho*vec(V2)-vec(C));
-    v = U\(L\k);
+    
+    switch(type)
+        case 'approximate'
+            res = K2'*k - R*v;
+            alpha = res'*res/(res'*R*res);
+            v = v + alpha*res;
+        otherwise
+            v = U\(L\k);
+    end
+    
     s = max(abs(real(v))-tau_S/rho,0).*sign(real(v)) +1j* max(abs(imag(v))-tau_S/rho,0).*sign(imag(v));
     S = reshape(s, Gr, Gt);
     Xs = A*S*B;
