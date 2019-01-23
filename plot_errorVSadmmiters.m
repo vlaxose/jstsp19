@@ -1,8 +1,8 @@
 clear;
 clc;
 
-addpath('basic_system_functions');
-addpath(genpath('benchmark_algorithms'));
+addpath([pwd,'/basic_system_functions']);
+addpath(genpath([pwd, '/benchmark_algorithms']));
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -45,7 +45,7 @@ for r=1:maxMCRealizations
       B((l-1)*Nt+1:l*Nt, :) = Dt'*Psi_bar(:,:,l);
     end
 
-    [~, ~, convergence_error_1] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_X, tau_S, rho);
+    [~, ~, convergence_error_1] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_X, tau_S, rho, 'svt');
     
   mean_error_1 = mean_error_1 + convergence_error_1;
 end
@@ -91,7 +91,7 @@ parfor r=1:maxMCRealizations
       B((l-1)*Nt+1:l*Nt, :) = Dt'*Psi_bar(:,:,l);
     end
 
-    [~, ~, convergence_error_2] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_X, tau_S, rho);
+    [~, ~, convergence_error_2] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_X, tau_S, rho, 'svt');
     
   mean_error_2 = mean_error_2 + convergence_error_2;
 end
@@ -137,7 +137,7 @@ parfor r=1:maxMCRealizations
       B((l-1)*Nt+1:l*Nt, :) = Dt'*Psi_bar(:,:,l);
     end
 
-    [~, ~, convergence_error_3] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_X, tau_S, rho);
+    [~, ~, convergence_error_3] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_X, tau_S, rho, 'svt');
     
   mean_error_3 = mean_error_3 + convergence_error_3;
 end
@@ -183,7 +183,7 @@ parfor r=1:maxMCRealizations
       B((l-1)*Nt+1:l*Nt, :) = Dt'*Psi_bar(:,:,l);
     end
 
-    [~, ~, convergence_error_4] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_X, tau_S, rho);
+    [~, ~, convergence_error_4] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_X, tau_S, rho, 'svt');
     
   mean_error_4 = mean_error_4 + convergence_error_4;
 end

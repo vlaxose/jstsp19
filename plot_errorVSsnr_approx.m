@@ -1,8 +1,8 @@
 clear;
 clc;
 
-addpath('basic_system_functions');
-addpath(genpath('benchmark_algorithms'));
+addpath([pwd, '/basic_system_functions']);
+addpath(genpath([pwd, '/benchmark_algorithms']));
 
 %% Parameter initialization
 Nt = 4;
@@ -17,7 +17,7 @@ snr_range = [-15:5:15];
 subSamplingRatio = 0.75;
 maxMCRealizations = 50;
 T = 70;
-Imax_range = [10 30];
+Imax_range = [10 30 50];
 
 %% Variables initialization
 error_proposed = zeros(maxMCRealizations,1);
@@ -121,6 +121,10 @@ p13 = semilogy(snr_range, (mean_error_proposed(2, :)));hold on;
 set(p13,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Blue', 'MarkerFaceColor', 'Blue', 'Marker', 's', 'MarkerSize', 6, 'Color', 'Blue');
 p14 = semilogy(snr_range, (mean_error_proposed_approx(2, :)));hold on;
 set(p14,'LineWidth',2, 'LineStyle', '--', 'MarkerEdgeColor', 'Green', 'MarkerFaceColor', 'Green', 'Marker', 'h', 'MarkerSize', 6, 'Color', 'Green');
+p15 = semilogy(snr_range, (mean_error_proposed(3, :)));hold on;
+set(p15,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Blue', 'MarkerFaceColor', 'Blue', 'Marker', 's', 'MarkerSize', 6, 'Color', 'Blue');
+p16 = semilogy(snr_range, (mean_error_proposed_approx(3, :)));hold on;
+set(p16,'LineWidth',2, 'LineStyle', '--', 'MarkerEdgeColor', 'Green', 'MarkerFaceColor', 'Green', 'Marker', 'h', 'MarkerSize', 6, 'Color', 'Green');
  
 legend({'Algorithm 1', 'Algorithm 2'}, 'FontSize', 12, 'Location', 'Best');
 
