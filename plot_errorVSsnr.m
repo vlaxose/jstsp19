@@ -5,19 +5,19 @@ addpath('basic_system_functions');
 addpath(genpath('benchmark_algorithms'));
 
 %% Parameter initialization
-Nt = 8;
-Nr = 64;
+Nt = 4;
+Nr = 32;
 Gr = Nr;
 Gt = Nt;
 total_num_of_clusters = 2;
 total_num_of_rays = 3;
 Np = total_num_of_clusters*total_num_of_rays;
 L = 4;
-snr_range = [-15:5:15];
+snr_range = [-15:3:15];
 subSamplingRatio = 0.75;
-maxMCRealizations = 30;
+maxMCRealizations = 100;
 T = 70;
-Imax = 100;
+Imax = 50;
 
 %% Variables initialization
 error_proposed = zeros(maxMCRealizations,1);
@@ -41,8 +41,8 @@ for snr_indx = 1:length(snr_range)
    disp(['square_noise_variance = ', num2str(square_noise_variance), ', realization: ', num2str(r)]);
 
     [H,Zbar,Ar,At,Dr,Dt] = wideband_mmwave_channel(L, Nr, Nt, total_num_of_clusters, total_num_of_rays, Gr, Gt);
-    [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wideband_hybBF_comm_system_training(H, T, square_noise_variance, subSamplingRatio, Gr);
-    numOfnz = 100;%length(find(abs(Zbar)/norm(Zbar)^2>1e-3));
+    [Y_proposed_hbf, Y_conventional, W_tilde, Psi_bar, Omega, Lr] = wideband_hybBF_comm_system_training(H, T, square_noise_variance, subSamplingRatio);
+    numOfnz = length(find(abs(Zbar)/norm(Zbar)^2>1e-3));
     
 %     disp('Running proposed technique...');
     tau_X = 1/norm(Y_proposed_hbf, 'fro')^2;
@@ -72,7 +72,7 @@ for snr_indx = 1:length(snr_range)
     
 %     disp('Running VAMP...');
     Phi = kron(B.', A);
-    y = vec(Y_conventional_hbf);
+    y = vec(Y_conventional);
     s_vamp = vamp(y, Phi, square_noise_variance, numOfnz);
     S_vamp = reshape(s_vamp, Nr, L*Nt);
     error_vamp(r) = norm(S_vamp-Zbar)^2/norm(Zbar)^2;
@@ -111,7 +111,7 @@ set(p13,'LineWidth',2, 'LineStyle', '--', 'MarkerEdgeColor', 'Black', 'MarkerFac
 p14 = semilogy(snr_range, (mean_error_proposed(1, :)));hold on;
 set(p14,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Green', 'MarkerFaceColor', 'Green', 'Marker', 'h', 'MarkerSize', 6, 'Color', 'Green');
  
-legend({'TD-OMP [11]', 'VAMP [23]', 'TSSR [15]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
+legend({'TD-OMP', 'VAMP', 'TSSR', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
 
 
 xlabel('SNR (dB)');

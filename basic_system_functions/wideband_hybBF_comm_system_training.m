@@ -1,14 +1,16 @@
-function [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wideband_hybBF_comm_system_training(H, T, snr, subSamplingRatio, Gr)
+function [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wideband_hybBF_comm_system_training(H, T, snr, subSamplingRatio)
 
    %% Parameter initialization
    [Nr, Nt, L] = size(H);
-    
+   Lr = round(subSamplingRatio*Nr);
+   
    %% Variables initialization
    Psi_i = zeros(T, T, Nt);
    Psi_bar = zeros(Nt, T, L);
-   F = 1/sqrt(Nt)*fft(eye(Nt));
    W_tilde = 1/sqrt(Nr)*fft(eye(Nr));
-%    W_tilde = 1/sqrt(Nr)*exp(1j*pi*cos(pi*[0:1:Nr-1]'/Nr)*[0:1:Nr-1]);
+%    W_tilde = 1/sqrt(Nr)*exp(1j*pi*sin(pi*rand(Nr,1)-pi)*[0:1:Nr-1]);
+%    W = W_tilde(:, 1:Lr);
+%    W = 1/sqrt(Nr)*exp(1j*pi*randn(Nr,1)*[0:1:Nr-1]);
 
    %% Additive white Gaussian noise
    N = sqrt(snr/2)*(randn(Nr, T) + 1j*randn(Nr, T));
@@ -45,7 +47,6 @@ function [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wid
    Omega = zeros(Nr, T);  
    for t = 1:T
     indices = randperm(Nr);
-    Lr = round(subSamplingRatio*Nr);
     indices_sub = indices(1:Lr);
     Omega(indices_sub, t) = ones(Lr, 1);
    end

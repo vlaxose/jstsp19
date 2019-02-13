@@ -43,7 +43,7 @@ for snr_indx = 1:length(snr_range)
    disp(['square_noise_variance = ', num2str(square_noise_variance), ', realization: ', num2str(r)]);
 
     [H,Zbar,Ar,At,Dr,Dt] = wideband_mmwave_channel(L, Nr, Nt, total_num_of_clusters, total_num_of_rays, Gr, Gt);
-    [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wideband_hybBF_comm_system_training(H, T, square_noise_variance, subSamplingRatio, Gr);
+    [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wideband_hybBF_comm_system_training(H, T, square_noise_variance, subSamplingRatio);
     numOfnz = 100;%length(find(abs(Zbar)/norm(Zbar)^2>1e-3));
     
 %     disp('Running proposed technique...');
