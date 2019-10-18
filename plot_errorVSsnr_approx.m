@@ -72,33 +72,6 @@ for snr_indx = 1:length(snr_range)
     end
 
     
-% %     disp('Running Two-stage-based Technique..');
-%     Y_twostage = mc_svt(Y_proposed_hbf, Omega, Imax,  tau_X, 0.1);
-%     S_twostage = pinv(A)*Y_twostage*pinv(B);    
-%     error_twostage(r) = norm(S_twostage-Zbar)^2/norm(Zbar)^2;
-%     if(error_twostage(r)>1)
-%         error_twostage(r) = 1;
-%     end
-    
-% %     disp('Running VAMP...');
-%     Phi = kron(B.', A);
-%     y = vec(Y_conventional_hbf);
-%     s_vamp = vamp(y, Phi, square_noise_variance, numOfnz);
-%     S_vamp = reshape(s_vamp, Nr, L*Nt);
-%     error_vamp(r) = norm(S_vamp-Zbar)^2/norm(Zbar)^2;
-%     if(error_vamp(r)>1)
-%         error_vamp(r) = 1;
-%     end
-       
-    
-% %     disp('Running OMP...');
-%     s_omp = OMP(Phi, y, numOfnz, square_noise_variance);
-%     S_omp = reshape(s_omp, Nr, L*Nt);
-%     error_omp(r) = norm(S_omp-Zbar)^2/norm(Zbar)^2;
-%     if(error_omp(r)>1)
-%         error_omp(r)=1;
-%     end
-  
    end
 
     mean_error_proposed(imax_indx, snr_indx) = min(mean(error_proposed), 1);

@@ -7,115 +7,203 @@ addpath(genpath('benchmark_algorithms'));
 %% Parameter initialization
 Nt = 4;
 Nr = 32;
+Mr_e = 32;
+Mr_hbf = Nr;
 Gr = Nr;
 Gt = Nt;
 total_num_of_clusters = 2;
-total_num_of_rays = 1;
+total_num_of_rays = 3;
 Np = total_num_of_clusters*total_num_of_rays;
-L_range = [1:2:10];
-snr_range = 5;
-subSamplingRatio = 0.75;
-maxMCRealizations = 50;
-T = 70;
-Imax = 50;
+L_range = [2 4 6 8 10];
+maxMCRealizations = 10;
+numOfnz = 50;
+Mr = 4;
+Imax = 100;
+square_noise_variance = 10^(-5/10);
 
 %% Variables initialization
 error_proposed = zeros(maxMCRealizations,1);
-error_omp = zeros(maxMCRealizations,1);
+error_proposed_angles = zeros(maxMCRealizations,1);
+error_ls = zeros(maxMCRealizations,1);
+error_omp_nr = zeros(maxMCRealizations,1);
+error_svt = zeros(maxMCRealizations,1);
 error_vamp = zeros(maxMCRealizations,1);
-error_twostage = zeros(maxMCRealizations,1);
-mean_error_proposed = zeros(length(subSamplingRatio), length(snr_range));
-mean_error_omp =  zeros(length(subSamplingRatio), length(snr_range));
-mean_error_vamp =  zeros(length(subSamplingRatio), length(snr_range));
-mean_error_twostage =  zeros(length(subSamplingRatio), length(snr_range));
+error_cosamp = zeros(maxMCRealizations,1);
+error_omp_mmv = zeros(maxMCRealizations,1);
+error_tssr = zeros(maxMCRealizations,1);
+mean_error_proposed = zeros(length(L_range),1);
+mean_error_proposed_angles = zeros(length(L_range),1);
+mean_error_ls =  zeros(length(L_range),1);
+mean_error_omp_nr =  zeros(length(L_range),1);
+mean_error_svt =  zeros(length(L_range),1);
+mean_error_vamp =  zeros(length(L_range),1);
+mean_error_cosamp =  zeros(length(L_range),1);
+mean_error_omp_mmv =  zeros(length(L_range),1);
+mean_error_tssr =  zeros(length(L_range),1);
 
 %% Iterations for different SNRs, training length and MC realizations
-for snr_indx = 1:length(snr_range)
-  square_noise_variance = 10^(-snr_range(snr_indx)/10);
-
-  for l_indx=1:length(L_range)
-    L = L_range(l_indx);
-    
-    parfor r=1:maxMCRealizations
+for l_indx = 1:length(L_range)
+  L = L_range(l_indx);
+  T = l_indx*5;
+  T_hbf = round(T/(Nr/Mr))*Nt;
+  T_prop = T*Nt;
+  
+  parfor r=1:maxMCRealizations
       
-    disp(['L = ', num2str(L), ', realization: ', num2str(r)]);
+   disp(['L  = ', num2str(L), ', realization: ', num2str(r)]);
 
-    [H,Zbar,Ar,At,Dr,Dt] = wideband_mmwave_channel(L, Nr, Nt, total_num_of_clusters, total_num_of_rays, Gr, Gt);
-    [Y_proposed_hbf, Y_conventional_hbf, W_tilde, Psi_bar, Omega, Lr] = wideband_hybBF_comm_system_training(H, T, square_noise_variance, subSamplingRatio, Gr);
-    numOfnz = 100;%length(find(abs(Zbar)/norm(Zbar)^2>1e-3));
-    
-%     disp('Running proposed technique...');
-    tau_X = 1/norm(Y_proposed_hbf, 'fro')^2;
-    tau_S = tau_X/2;
-    eigvalues = eigs(Y_proposed_hbf'*Y_proposed_hbf);
-    rho = sqrt(min(eigvalues)*(tau_X+tau_S)/2);
-    A = W_tilde'*Dr;
-    B = zeros(L*Nt, T);
+   %% System model
+   [H,Zbar,Ar,At,Dr,Dt] = wideband_mmwave_channel(L, Nr, Nt, total_num_of_clusters, total_num_of_rays, Gr, Gt);
+
+   % Additive white Gaussian noise
+   N = sqrt(square_noise_variance/2)*(randn(Nr, T_prop) + 1j*randn(Nr, T_prop));
+   Psi_i = zeros(T_prop, T_prop, Nt);
+   % Generate the training symbols
+   for k=1:Nt
+    % 4-QAM symbols
+    s = qam4mod([], 'mod', T_prop);
+    Psi_i(:,:,k) =  toeplitz(s);
+   end
+
+   
+   %% Conventional HBF with ZC, which gathers Nr RF chains by assuming longer channel coherence time
+
+    [Y_hbf_nr, W_c, Psi_bar] = hbf(H, N(:, 1:T_hbf), Psi_i(1:T_hbf,1:T_hbf,:), T_hbf, Mr_hbf, createBeamformer(Nr, 'ZC'));
+    A = W_c'*Dr;
+    B = zeros(L*Gt, T_hbf);
     for l=1:L
-      B((l-1)*Nt+1:l*Nt, :) = Dt'*Psi_bar(:,:,l);
+      B((l-1)*Gt+1:l*Gt, :) = Dt'*Psi_bar(:,:,l);
+    end    
+    Phi = kron((B).', A);
+    y = vec(Y_hbf_nr);
+    
+    % LS based
+    S_ls = pinv(A)*Y_hbf_nr*pinv(B);
+    error_ls(r) = norm(S_ls-Zbar)^2/norm(Zbar)^2;
+    if(error_ls(r)>1)
+        error_ls(r)=1;
     end
 
-    [~, Y_proposed] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_X, tau_S, rho);
-    S_proposed = pinv(A)*Y_proposed*pinv(B);
+%     % OMP based
+%     s_omp_nr_solver = spx.pursuit.single.OrthogonalMatchingPursuit(Phi, numOfnz);
+%     s_omp_nr = s_omp_nr_solver.solve(y);
+%     S_omp_nr = reshape(s_omp_nr.z, Gr, L*Gt);
+%     error_omp_nr(r) = norm(S_omp_nr-Zbar)^2/norm(Zbar)^2;
+%     if(error_omp_nr(r)>1)
+%         error_omp_nr(r)=1;
+%     end
+%    
+% 
+    % VAMP-based with ZC and Nr RF chains
+    s_vamp = vamp(y, Phi, 1, numOfnz);
+    S_vamp = reshape(s_vamp, Gr, L*Gt);
+    error_vamp(r) = norm(S_vamp-Zbar)^2/norm(Zbar)^2;
+    if(error_vamp(r)>1)
+        error_vamp(r) = 1;
+    end
+    
+%     % CoSaMP-based with ZC and Nr RF chains
+%     s_cosamp = CoSaMP(Phi, y, numOfnz);
+%     S_cosamp = reshape(s_cosamp, Gr, L*Gt);
+%     error_cosamp(r) = norm(S_cosamp-Zbar)^2/norm(Zbar)^2;
+%     if(error_cosamp(r)>1)
+%         error_cosamp(r) = 1;
+%     end
+
+    % OMP with MMV based
+    s_omp_solver = spx.pursuit.joint.OrthogonalMatchingPursuit(A, numOfnz);
+    S_omp_mmv = s_omp_solver.solve(Y_hbf_nr*pinv(B));
+    error_omp_mmv(r) = norm(S_omp_mmv.Z-Zbar)^2/norm(Zbar)^2;
+    if(error_omp_mmv(r)>1)
+        error_omp_mmv(r)=1;
+    end
+    
+   %% Proposed HBF
+   W = createBeamformer(Nr, 'ZC');    
+   [Y_proposed_hbf, W_tilde, Psi_bar, Omega, Y] = proposed_hbf(H, N, Psi_i, T_prop, Mr_e, Mr, W);
+    
+   tau_Y = 1/norm(Y_proposed_hbf, 'fro')^2;
+   tau_Z = 1/norm(Zbar, 'fro')^2/2;
+   eigvalues = eigs(Y_proposed_hbf'*Y_proposed_hbf);
+   rho = sqrt(max(eigvalues)*(1/norm(Y_proposed_hbf, 'fro')^2));
+
+    A = W_tilde'*Dr;
+    B = zeros(L*Gt, T_prop);
+    for l=1:L
+      B((l-1)*Gt+1:l*Gt, :) = Dt'*Psi_bar(:,:,l);
+    end    
+    [S_proposed, Y_proposed] = proposed_algorithm(Y_proposed_hbf, Omega, A, B, Imax, tau_Y, tau_Z, rho, 'approximate');
     error_proposed(r) = norm(S_proposed-Zbar)^2/norm(Zbar)^2;
     if(error_proposed(r)>1)
         error_proposed(r)=1;
     end
   
-%     disp('Running Two-stage-based Technique..');
-    Y_twostage = mc_svt(Y_proposed_hbf, Omega, Imax,  tau_X, 0.1);
-    S_twostage = pinv(A)*Y_twostage*pinv(B);    
-    error_twostage(r) = norm(S_twostage-Zbar)^2/norm(Zbar)^2;
-    if(error_twostage(r)>1)
-        error_twostage(r) = 1;
+    [~, indx_S] = sort(abs(vec(Zbar)), 'descend');
+    [S_proposed_angles, Y_proposed_angles] = proposed_algorithm_angles(Y_proposed_hbf, Omega, indx_S, A, B, Imax, tau_Y, tau_Z, rho, 'approximate', 20);
+    error_proposed_angles(r) = norm(S_proposed_angles-Zbar)^2/norm(Zbar)^2;
+    if(error_proposed_angles(r)>1)
+        error_proposed_angles(r)=1;
     end
     
-%     disp('Running VAMP...');
-    Phi = kron(B.', A);
-    y = vec(Y_conventional_hbf);
-    s_vamp = vamp(y, Phi, square_noise_variance, numOfnz);
-    S_vamp = reshape(s_vamp, Nr, L*Nt);
-    error_vamp(r) = norm(S_vamp-Zbar)^2/norm(Zbar)^2;
-    if(error_vamp(r)>1)
-        error_vamp(r) = 1;
-    end
-       
-    
-%     disp('Running OMP...');
-    s_omp = OMP(Phi, y, numOfnz, square_noise_variance);
-    S_omp = reshape(s_omp, Nr, L*Nt);
-    error_omp(r) = norm(S_omp-Zbar)^2/norm(Zbar)^2;
-    if(error_omp(r)>1)
-        error_omp(r)=1;
-    end
-  
-   end
-
-    mean_error_proposed(l_indx, snr_indx) = min(mean(error_proposed), 1);
-    mean_error_omp(l_indx, snr_indx) = min(mean(error_omp), 1);
-    mean_error_vamp(l_indx, snr_indx) = min(mean(error_vamp), 1);
-    mean_error_twostage(l_indx, snr_indx) = min(mean(error_twostage), 1);
-
+%     
+%     % SVT-based
+%     Y_svt = mc_svt(Y_proposed, Omega, Imax, tau_Y, 0.1);
+%     S_svt = pinv(A)*Y_svt*pinv(B);
+%     error_svt(r) = norm(S_svt-Zbar)^2/norm(Zbar)^2;
+%     if(error_svt(r)>1)
+%         error_svt(r) = 1;
+%     end
+%     
+%     % TSSR-based
+%     A = W_tilde'*Dr;
+%     Phi = kron(B.', A);    
+%     s_tssr_solver = spx.pursuit.joint.OrthogonalMatchingPursuit(A, 2*numOfnz);
+%     S_tssr = s_tssr_solver.solve(Y_svt*pinv(B));
+%     error_tssr(r) = norm(S_tssr.Z-Zbar)^2/norm(Zbar)^2;
+%     if(error_tssr(r)>1)
+%         error_tssr(r) = 1;
+%     end
   end
+  
+    mean_error_proposed(l_indx) = mean(error_proposed);
+    mean_error_proposed_angles(l_indx) = mean(error_proposed_angles);
+    mean_error_ls(l_indx) = mean(error_ls);
+    mean_error_omp_nr(l_indx) = mean(error_omp_nr);
+    mean_error_svt(l_indx) = mean(error_svt);   
+    mean_error_vamp(l_indx) = mean(error_vamp);
+    mean_error_cosamp(l_indx) = mean(error_cosamp);
+    mean_error_omp_mmv(l_indx) = mean(error_omp_mmv);
+    mean_error_tssr(l_indx) = mean(error_tssr);
 
 end
 
 
 figure;
-p11 = semilogy(L_range, (mean_error_omp(:, 1)));hold on;
-set(p11,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', '>', 'MarkerSize', 6, 'Color', 'Black');
-p12 = semilogy(L_range, (mean_error_vamp(:, 1)));hold on;
-set(p12,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Blue', 'MarkerFaceColor', 'Blue', 'Marker', 'o', 'MarkerSize', 6, 'Color', 'Blue');
-p13 = semilogy(L_range, (mean_error_twostage(:, 1)));hold on;
-set(p13,'LineWidth',2, 'LineStyle', '--', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', 's', 'MarkerSize', 6, 'Color', 'Black');
-p14 = semilogy(L_range, (mean_error_proposed(:, 1)));hold on;
-set(p14,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Green', 'MarkerFaceColor', 'Green', 'Marker', 'h', 'MarkerSize', 6, 'Color', 'Green');
- 
-legend({'TD-OMP [11]', 'VAMP [23]', 'TSSR [15]', 'Proposed'}, 'FontSize', 12, 'Location', 'Best');
+p = semilogy(L_range, mean_error_ls);hold on;
+set(p, 'LineWidth',2, 'LineStyle', ':', 'Color', 'Black');
+% p = semilogy(L_range, mean_error_svt);hold on;
+% set(p, 'LineWidth',1, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', '>', 'MarkerSize', 6, 'Color', 'Black');
+% p = semilogy(L_range, mean_error_omp_nr);hold on;
+% set(p,'LineWidth',1, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', '<', 'MarkerSize', 6, 'Color', 'Black');
+p = semilogy(L_range, mean_error_vamp);hold on;
+set(p,'LineWidth',1, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', 'o', 'MarkerSize', 6, 'Color', 'Black');
+% p = semilogy(L_range, mean_error_cosamp);hold on;
+% set(p,'LineWidth',1, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'White', 'Marker', 'o', 'MarkerSize', 6, 'Color', 'Black');
+p = semilogy(L_range, mean_error_omp_mmv);hold on;
+set(p,'LineWidth',1, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'White', 'Marker', '+', 'MarkerSize', 6, 'Color', 'Black');
+% p = semilogy(L_range, mean_error_tssr);hold on;
+% set(p, 'LineWidth',1, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', 'x', 'MarkerSize', 6, 'Color', 'Black');
+p = semilogy(L_range, (mean_error_proposed));hold on;
+set(p,'LineWidth',1, 'LineStyle', '-', 'MarkerEdgeColor', 'Blue', 'MarkerFaceColor', 'Blue', 'Marker', 'h', 'MarkerSize', 8, 'Color', 'Blue');
+p = semilogy(L_range, (mean_error_proposed_angles));hold on;
+set(p,'LineWidth',1, 'LineStyle', '--', 'MarkerEdgeColor', 'Green', 'MarkerFaceColor', 'Green', 'Marker', 's', 'MarkerSize', 8, 'Color', 'Green');
+
+% legend({'LS', 'SVT', 'OMP', 'VAMP', 'CoSaMP', 'MMV-OMP', 'TSSR',  'Proposed', 'Proposed with angle information'}, 'FontSize', 12, 'Location', 'Best');
+legend({'LS', 'VAMP', 'MMV-OMP', 'Proposed', 'Proposed with angle information'}, 'FontSize', 11, 'Location', 'Best');
 
 
 xlabel('Number of channel delay taps');
 ylabel('NMSE (dB)')
-grid on;set(gca,'FontSize',12);
+grid on;set(gca,'FontSize',11);
 
 savefig('results/errorVSdelays.fig')
