@@ -15,7 +15,7 @@ total_num_of_clusters = 2;
 total_num_of_rays = 3;
 Np = total_num_of_clusters*total_num_of_rays;
 L = 4;
-maxMCRealizations = 100;
+maxMCRealizations = 1;
 Mr = 4;
 numOfnz = 5*20;
 T = 35;
@@ -48,7 +48,7 @@ mean_error_tssr =  zeros(length(SNR_range),1);
 for snr_indx = 1:length(SNR_range)
   square_noise_variance = 10^(-SNR_range(snr_indx)/10);
 
-  parfor r=1:maxMCRealizations
+  for r=1:maxMCRealizations
       
    disp(['SNR  = ', num2str(square_noise_variance), ', realization: ', num2str(r)]);
 
